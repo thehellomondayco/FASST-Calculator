@@ -1402,12 +1402,15 @@ body.scores-locked .score-lock-overlay {
   }
 
   .modal {
-    display: block;
+    display: flex;
+    align-items: flex-end;
+    justify-content: stretch;
+    overflow: hidden;
   }
 
   .modal-card,
   .modal-card--profile {
-    position: fixed;
+    position: absolute;
     left: 0;
     right: 0;
     bottom: 0;
