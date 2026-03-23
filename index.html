@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FASST Combine Calculator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <svg class="icon-sprite" aria-hidden="true" focusable="false">
+    <symbol id="icon-trophy" viewBox="0 0 24 24">
+      <path fill="currentColor" d="M17.1025 3.00488C17.6067 3.05621 18 3.48232 18 4v1h3l0.1025 0.00488C21.6067 5.05621 22 5.48232 22 6v2c0 2.695 -2.1323 4.89 -4.8018 4.9941 -0.8777 1.5207 -2.4019 2.6195 -4.1982 2.9209V19h4v2H7v-2h4v-3.085c-1.7965 -0.3015 -3.32148 -1.4 -4.19922 -2.9209C4.13175 12.8895 2 10.6947 2 8V6l0.00488 -0.10254C2.05621 5.39333 2.48232 5 3 5h3V4l0.00488 -0.10254C6.05621 3.39333 6.48232 3 7 3h10zM8 10c0 2.2091 1.79086 4 4 4 2.2091 0 4 -1.7909 4 -4V5H8zM4 8c0 1.32848 0.86419 2.4532 2.06055 2.8477C6.02137 10.5707 6 10.2878 6 10V7H4zm14 2c0 0.2878 -0.0223 0.5706 -0.0615 0.8477C19.1353 10.4535 20 9.32881 20 8V7h-2z"></path>
+    </symbol>
+    <symbol id="icon-athlete-profile" viewBox="0 0 14 14">
+      <path fill="currentColor" fill-rule="evenodd" d="M1.57322 1.57322C1.62011 1.52634 1.6837 1.5 1.75 1.5h1.5c0.41421 0 0.75 -0.33579 0.75 -0.75C4 0.335786 3.66421 0 3.25 0h-1.5C1.28587 0 0.840752 0.184375 0.512563 0.512563 0.184375 0.840752 0 1.28587 0 1.75v1.5c0 0.41421 0.335786 0.75 0.75 0.75 0.41421 0 0.75 -0.33579 0.75 -0.75v-1.5c0 -0.0663 0.02634 -0.12989 0.07322 -0.17678ZM14 10.75c0 -0.4142 -0.3358 -0.75 -0.75 -0.75s-0.75 0.3358 -0.75 0.75v1.5c0 0.0663 -0.0263 0.1299 -0.0732 0.1768 -0.0469 0.0469 -0.1105 0.0732 -0.1768 0.0732h-1.5c-0.4142 0 -0.75 0.3358 -0.75 0.75s0.3358 0.75 0.75 0.75h1.5c0.4641 0 0.9092 -0.1844 1.2374 -0.5126 0.3282 -0.3282 0.5126 -0.7733 0.5126 -1.2374v-1.5ZM0.75 10c0.41421 0 0.75 0.3358 0.75 0.75v1.5c0 0.0663 0.02634 0.1299 0.07322 0.1768 0.04689 0.0469 0.11048 0.0732 0.17678 0.0732h1.5c0.41421 0 0.75 0.3358 0.75 0.75s-0.33579 0.75 -0.75 0.75h-1.5c-0.46413 0 -0.909248 -0.1844 -1.237437 -0.5126C0.184375 13.1592 0 12.7141 0 12.25v-1.5c0 -0.4142 0.335786 -0.75 0.75 -0.75Zm10 -10c-0.4142 0 -0.75 0.335786 -0.75 0.75 0 0.41421 0.3358 0.75 0.75 0.75h1.5c0.0663 0 0.1299 0.02634 0.1768 0.07322 0.0469 0.04689 0.0732 0.11048 0.0732 0.17678v1.5c0 0.41421 0.3358 0.75 0.75 0.75s0.75 -0.33579 0.75 -0.75v-1.5c0 -0.46413 -0.1844 -0.909248 -0.5126 -1.237437C13.1592 0.184375 12.7141 0 12.25 0h-1.5ZM6.99906 7.77647c-1.89906 0 -3.51847 1.19735 -4.14448 2.87833 -0.11136 0.299 0.12694 0.5954 0.44605 0.5954h7.39687c0.3191 0 0.5574 -0.2964 0.446 -0.5954 -0.626 -1.68098 -2.24537 -2.87833 -4.14444 -2.87833Zm2.20903 -3.31591c0 1.22086 -0.9897 2.21056 -2.21056 2.21056s-2.21056 -0.9897 -2.21056 -2.21056S5.77667 2.25 6.99753 2.25s2.21056 0.9897 2.21056 2.21056Z" clip-rule="evenodd"></path>
+    </symbol>
+    <symbol id="icon-sliders" viewBox="0 0 24 24">
+      <path d="M7.5 6.75c0 0.53043 0.21071 1.03914 0.58579 1.41421 0.37507 0.37508 0.88378 0.58579 1.41421 0.58579 0.5304 0 1.0391 -0.21071 1.4142 -0.58579 0.3751 -0.37507 0.5858 -0.88378 0.5858 -1.41421s-0.2107 -1.03914 -0.5858 -1.41421C10.5391 4.96071 10.0304 4.75 9.5 4.75c-0.53043 0 -1.03914 0.21071 -1.41421 0.58579C7.71071 5.71086 7.5 6.21957 7.5 6.75Z"></path>
+      <path d="M11.5 6.75h7.25"></path>
+      <path d="M5.25 6.75H7.5"></path>
+      <path d="M12.5 12.75c0 0.5304 0.2107 1.0391 0.5858 1.4142s0.8838 0.5858 1.4142 0.5858c0.5304 0 1.0391 -0.2107 1.4142 -0.5858s0.5858 -0.8838 0.5858 -1.4142c0 -0.5304 -0.2107 -1.0391 -0.5858 -1.4142S15.0304 10.75 14.5 10.75c-0.5304 0 -1.0391 0.2107 -1.4142 0.5858S12.5 12.2196 12.5 12.75Z"></path>
+      <path d="M12.5 12.75H5.25"></path>
+      <path d="M18.75 12.75H16.5"></path>
+      <path d="M13.5 18.75c0.0852 1.6078 0.6035 3.1627 1.5 4.5H9c0.89653 -1.3373 1.4148 -2.8922 1.5 -4.5"></path>
+      <path d="M6.75 23.25h10.5"></path>
+      <path d="M2.25 0.75h19.5s1.5 0 1.5 1.5v15s0 1.5 -1.5 1.5H2.25s-1.5 0 -1.5 -1.5v-15s0 -1.5 1.5 -1.5Z"></path>
+    </symbol>
+    <symbol id="icon-gauge-custom" viewBox="0 0 24 24">
+      <path d="m12 14 4 -4"></path>
+      <path d="M3.34 19a10 10 0 1 1 17.32 0"></path>
+    </symbol>
+    <symbol id="icon-tier-bars" viewBox="0 0 16 16">
+      <path d="M15 15h-4V2h4Z" fill="currentColor"></path>
+      <path d="M10 15h-4V6h4Z" fill="currentColor"></path>
+      <path d="M5 15H1V9h4Z" fill="currentColor"></path>
+    </symbol>
+    <symbol id="icon-shield-check" viewBox="0 0 16 16">
+      <path fill="currentColor" d="M13.983799999999999 1.4527333333333332c-0.09113333333333332 -0.07373333333333333 -0.19753333333333334 -0.12606666666666666 -0.3116 -0.1532 -0.114 -0.027133333333333332 -0.23259999999999997 -0.028399999999999998 -0.34713333333333335 -0.003666666666666666 -0.8380666666666667 0.17566666666666667 -1.7032 0.17786666666666665 -2.5420666666666665 0.0066 -0.8389333333333333 -0.17133333333333334 -1.6339333333333332 -0.5124666666666666 -2.336 -1.0026C8.315733333333332 0.20879999999999999 8.159733333333332 0.15999999999999998 8 0.15999999999999998c-0.15973333333333334 0 -0.3157333333333333 0.048799999999999996 -0.44699999999999995 0.13986666666666664 -0.7020666666666666 0.4901333333333333 -1.4970666666666665 0.8312666666666666 -2.336 1.0026 -0.8389333333333333 0.17126666666666668 -1.704 0.16906666666666664 -2.542 -0.0066 -0.1146 -0.024733333333333333 -0.2332 -0.023466666666666667 -0.3472 0.003666666666666666 -0.114 0.027133333333333332 -0.22046666666666664 0.07946666666666666 -0.3116 0.1532 -0.091 0.0738 -0.16426666666666667 0.16706666666666664 -0.21446666666666664 0.2729333333333333 -0.05026666666666666 0.10586666666666666 -0.07606666666666666 0.22159999999999996 -0.07566666666666666 0.33873333333333333v5.8427333333333324c-0.0007333333333333333 1.1243333333333334 0.2672 2.232666666666667 0.7814666666666665 3.232533333333333s1.2600666666666664 1.8625333333333334 2.175133333333333 2.516l2.8624666666666667 2.0389999999999997c0.13286666666666666 0.09453333333333333 0.29179999999999995 0.14533333333333331 0.45486666666666664 0.14533333333333331 0.16306666666666667 0 0.32199999999999995 -0.0508 0.45486666666666664 -0.14533333333333331l2.8625333333333334 -2.0389999999999997c0.9150666666666667 -0.6534666666666666 1.6608 -1.5160666666666665 2.1750666666666665 -2.516 0.5142666666666666 -0.9998666666666667 0.7822 -2.1082 0.7815333333333332 -3.232533333333333V2.0644c0.00039999999999999996 -0.11713333333333333 -0.025466666666666665 -0.23286666666666667 -0.07566666666666666 -0.33873333333333333s-0.12353333333333333 -0.19913333333333333 -0.2145333333333333 -0.2729333333333333Zm-1.2783333333333333 6.4544c0.0006666666666666666 0.8741999999999999 -0.2076 1.735933333333333 -0.6072 2.5134666666666665 -0.39973333333333333 0.7775333333333332 -0.9793333333333334 1.4483333333333333 -1.6905999999999999 1.9567333333333332L8 14.0948 5.5924 12.377333333333333c-0.7113333333333333 -0.5083333333333333 -1.2909333333333333 -1.1791999999999998 -1.6905999999999999 -1.9567333333333332 -0.39966666666666667 -0.7775333333333332 -0.6078666666666667 -1.6392666666666664 -0.6072666666666666 -2.5134666666666665V2.966333333333333C4.938666666666666 3.1070666666666664 6.5852 2.7256 8 1.8761999999999999c1.4147999999999998 0.8493999999999999 3.0614 1.2308666666666666 4.705466666666666 1.0901333333333332v4.940799999999999Zm-3.497733333333333 -1.7959999999999998 -2.1096 2.1175333333333333 -0.698 -0.7058666666666666c-0.14766666666666667 -0.14766666666666667 -0.348 -0.23059999999999997 -0.5568 -0.23059999999999997 -0.20886666666666667 0 -0.40913333333333335 0.08293333333333333 -0.5568 0.23059999999999997 -0.14773333333333333 0.14766666666666667 -0.23066666666666663 0.348 -0.23066666666666663 0.5568666666666666s0.08293333333333333 0.40913333333333335 0.23066666666666663 0.5568l1.2547333333333333 1.2548c0.07293333333333332 0.07346666666666667 0.15973333333333334 0.13179999999999997 0.2552 0.17166666666666666 0.09559999999999999 0.03973333333333333 0.19813333333333333 0.06026666666666666 0.30166666666666664 0.06026666666666666s0.206 -0.020533333333333334 0.3016 -0.06026666666666666c0.09553333333333333 -0.03986666666666666 0.18226666666666663 -0.09819999999999998 0.2552 -0.17166666666666666l2.6978 -2.6743333333333332c0.14766666666666667 -0.14766666666666667 0.23066666666666663 -0.3479333333333333 0.23066666666666663 -0.5568s-0.08299999999999999 -0.40913333333333335 -0.23066666666666663 -0.5568666666666666c-0.14766666666666667 -0.14766666666666667 -0.348 -0.23059999999999997 -0.5568 -0.23059999999999997s-0.40913333333333335 0.08293333333333333 -0.5568 0.23059999999999997l-0.0314 0.007866666666666666Z"></path>
+    </symbol>
+    <symbol id="icon-breakdown-clipboard" viewBox="0 0 16 16">
+      <path d="m9.8875 6.30625 0 4.175"></path>
+      <path d="m7.5 7.5 0 2.9812499999999997"></path>
+      <path d="m5.1125 8.69375 0 1.7874999999999999"></path>
+      <path d="m9.8875 1.5375 2.9812499999999997 0 0 12.524999999999999 -10.7375 0 0 -12.524999999999999 2.9812499999999997 0"></path>
+      <path d="M9.8875 0.9375v1.1937499999999999a1.2 1.2 0 0 1 -1.1937499999999999 1.1937499999999999h-2.3874999999999997a1.2 1.2 0 0 1 -1.1937499999999999 -1.1937499999999999V0.9375Z"></path>
+    </symbol>
+    <symbol id="icon-lock" viewBox="0 0 16 16">
+      <path fill="currentColor" d="M5.55 4.57v1.47h4.9V4.57C10.45 3.21638 9.35362 2.12 8 2.12S5.55 3.21638 5.55 4.57Zm-1.96 1.47V4.57C3.59 2.13531 5.56531 0.16 8 0.16s4.41 1.97531 4.41 4.41v1.47h0.49c1.08106 0 1.96 0.87894 1.96 1.96v5.88c0 1.08106 -0.87894 1.96 -1.96 1.96H3.1c-1.08106 0 -1.96 -0.87894 -1.96 -1.96V8c0 -1.08106 0.87894 -1.96 1.96 -1.96h0.49Z"></path>
+    </symbol>
+    <symbol id="icon-tier-foundation" viewBox="0 0 16 16">
+      <path fill="currentColor" d="M16 1c0 3.55-2.64375 6.484375-6.06875 6.9375-.221875-1.66875-.95625-3.175-2.040625-4.353125C9.0875 1.446875 11.375 0 14 0h1c.553125 0 1 .446875 1 1ZM0 3c0-.553125.446875-1 1-1h1c3.865625 0 7 3.134375 7 7v6c0 .553125-.446875 1-1 1s-1-.446875-1-1V10C3.134375 10 0 6.865625 0 3Z"></path>
+    </symbol>
+    <symbol id="icon-tier-developmental" viewBox="0 0 24 24">
+      <path fill="currentColor" d="M10.0146 10.5c.2779 0 .5418.1153.7295.3154l.0752.0918 4.1768 5.668 1.21-1.6631c.1881-.2587.4886-.4121.8085-.4121.2801 0 .5455.1175.7334.3203l.0752.0918 4 5.5c.2211.3042.2537.7069.083 1.042-.1706.3351-.5155.5459-.8916.5459H3.01465c-.37718 0-.72241-.2122-.89258-.5488-.17012-.3367-.13582-.7403.08789-1.044l7-9.5c.18849-.2557.48697-.4072.80464-.4072M4.99316 20h7.51274l1.2568-1.7295-3.7481-5.0859zM19.0205 2.00098c.0176.00035.0352.00067.0527.00195.0177.00128.0353.00269.0528.00488.0118.00149.0234.00396.0351.00586.0188.00304.0373.00668.0557.01074.0111.00246.0222.00498.0332.00782.0673.01733.1314.04206.1924.07226.0953.04708.1853.10913.2646.18848l2.75 2.75c.3905.39051.3905 1.02355 0 1.41406s-1.0235.39048-1.414 0L20 5.41406V10c0 .5523-.4478 1-1 1-.5523 0-1-.4477-1-1V5.41406l-1.043 1.04297c-.3905.39051-1.0235.39048-1.414 0-.3906-.39052-.3906-1.02354 0-1.41406l2.75-2.75c.0571-.05716.1218-.10641.1914-.14844.0199-.01204.04-.02365.0605-.03418.0624-.03194.1282-.05779.1973-.07617.0166-.00441.0331-.00915.0498-.0127.011-.00231.0221-.0039.0332-.00586.0175-.0031.0351-.00564.0527-.00781.0178-.00216.0357-.00366.0537-.00488.016-.00109.0319-.00162.0479-.00195.0068-.00014.0137-.00098.0205-.00098.0069 0 .0137.00084.0205.00098"></path>
+    </symbol>
+    <symbol id="icon-tier-competitive" viewBox="0 0 24 24">
+      <path d="m15.7311 10.5668.7839-.392c.196-.0979.4899 0 .6859.196l1.0778 2.1557c.294.4899.7838.7838 1.2738.7838.196 0 .4899-.0979.6858-.1959.6859-.392.9799-1.2738.6859-1.9597l-1.0778-2.15568c-.3919-.78388-1.0778-1.46972-1.9597-1.76363-.8818-.294-1.7636-.19597-2.6455.19597l-2.1556 1.07778-2.6455 1.37179c-.196.09794-.392.09794-.58794-.09803L8.38243 8.31318c-.5879-.58791-1.46981-.58791-2.05772 0-.58781.5879-.58781 1.46972 0 2.05762l1.46982 1.4698c1.07778 1.0778 2.64557 1.2738 3.91927.6859l1.3718-.6859 1.0778 1.9596-2.8415 1.8617c-.5879.3919-.9799.8818-1.2738 1.4697l-1.27373 3.5275c-.294.7838 0 1.5677.78379 1.9596.19597.0981.39194.0981.58794.0981.5879 0 1.0777-.294 1.3717-.8819l1.2738-3.5274c0-.098.098-.196.196-.196l2.3516-1.5677.196.5878c.4899 1.3718 1.7637 2.2537 3.2334 2.2537.2939 0 .5879 0 .8818-.0979l2.2536-.5879c.7839-.196 1.2739-.9799 1.0779-1.7638-.196-.7838-.9798-1.2737-1.7637-1.0778l-2.2536.588c-.196.0979-.49-.0982-.5879-.2941l-.196-.5879" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"></path>
+      <path d="M11.658 7.06453c1.6235 0 2.9395-1.31603 2.9395-2.93954 0-1.62341-1.316-2.93944-2.9395-2.93944-1.6234 0-2.93943 1.31603-2.93943 2.93944 0 1.62351 1.31603 2.93954 2.93943 2.93954Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"></path>
+      <path d="M7.15069 1.18555c-1.62342 0-2.93945 1.31603-2.93945 2.93944 0 .9672.46708 1.8253 1.188 2.36096" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"></path>
+      <path d="m7.05278 15.3677-.58791.3919c-.5879.392-.97984.8818-1.27375 1.4697l-1.27385 3.5275c-.2939.7839.00001 1.5677.78388 1.9597.19597.0979.39194.0979.58791.0979.294 0 .58791-.0979.78388-.2939" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"></path>
+      <path d="M3.47348 8.313c-.58791-.58791-1.46973-.58791-2.05763 0-.587912.58791-.587912 1.46972 0 2.0576l1.46972 1.4698c.58791.588 1.46981.9799 2.2536.9799" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"></path>
+    </symbol>
+    <symbol id="icon-tier-elite" viewBox="0 0 14 14">
+      <path fill="currentColor" fill-rule="evenodd" d="M0 .749908c0-.414213.335786-.74999955.75-.74999955h2.88462c.01876 0 .03737.00068928.05579.0020439h6.62089c.0179-.00129767.036-.00195307.0541-.00195307H13.25c.4142 0 .75.33578672.75.74999972V3.63499c0 1.85926-1.396 3.39246-3.1971 3.60855-.4474 1.3692-1.61369 2.41325-3.0529 2.68626V12.5h2.6154c.4142 0 .75.3358.75.75s-.3358.75-.75.75H7.02626c-.00872.0003-.01747.0005-.02626.0005s-.01754-.0002-.02626-.0005H3.63461c-.41421 0-.75-.3358-.75-.75s.33579-.75.75-.75H6.25V9.9298c-1.43921-.27301-2.60549-1.31707-3.05293-2.68626C1.39604 7.02745 0 5.49425 0 3.63499V.749908ZM2.88462 5.63413V1.49991H1.5v2.13508c0 .91499.57569 1.69552 1.38462 1.99914ZM11.1154 1.5v4.13413C11.9243 5.33051 12.5 4.54998 12.5 3.63499V1.5h-1.3846Z" clip-rule="evenodd"></path>
+    </symbol>
+    <symbol id="icon-tier-pro" viewBox="0 0 16 16">
+      <path d="M1.24756 13.1244H13.7535" fill="none" stroke="currentColor" stroke-miterlimit="10"></path>
+      <path d="m1.25366 4.37653 1.24405 4.37379v4.37381H12.5025v-4.37381l1.25056-4.37379" fill="none" stroke="currentColor" stroke-miterlimit="10"></path>
+      <path d="M13.753 4.37682 10.0012 6.24944 7.5 3.12622" fill="none" stroke="currentColor" stroke-miterlimit="10"></path>
+      <path d="M7.50006 3.12622 4.9989 6.24944 1.25366 4.37682" fill="none" stroke="currentColor" stroke-miterlimit="10"></path>
+      <path d="M7.5 11.2449c.69069 0 1.25056-.83838 1.25056-1.87263 0-1.03419-.55987-1.87263-1.25056-1.87263-.69069 0-1.25061.83844-1.25061 1.87263 0 1.03425.55992 1.87263 1.25061 1.87263Z" fill="none" stroke="currentColor" stroke-miterlimit="10"></path>
+      <path d="M10.0012 9.37256h2.50119" fill="none" stroke="currentColor" stroke-miterlimit="10"></path>
+      <path d="M4.99936 9.37256H2.49817" fill="none" stroke="currentColor" stroke-miterlimit="10"></path>
+      <path d="M7.50006 3.11966c.34356 0 .62206-.27849.62206-.62203 0-.34353-.2785-.62202-.62206-.62202-.3435 0-.622.27849-.622.62202 0 .34354.2785.62203.622.62203Z" fill="none" stroke="currentColor" stroke-miterlimit="10"></path>
+      <path d="M1.24702 4.37027c.34353 0 .62203-.27849.62203-.62203 0-.34353-.2785-.62202-.62203-.62202-.34354 0-.62202.27849-.62202.62202 0 .34354.27848.62203.62202.62203Z" fill="none" stroke="currentColor" stroke-miterlimit="10"></path>
+      <path d="M13.7531 4.37027c.34356 0 .622-.27849.622-.62203 0-.34353-.27844-.62202-.622-.62202s-.622.27849-.622.62202c0 .34354.27844.62203.622.62203Z" fill="none" stroke="currentColor" stroke-miterlimit="10"></path>
+    </symbol>
+    <symbol id="icon-history" viewBox="0 0 24 24">
+      <path d="M3 12a9 9 0 1 0 9 -9 9.75 9.75 0 0 0 -6.74 2.74L3 8" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+      <path d="M3 3v5h5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+      <path d="M12 7v5l4 2" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+    </symbol>
+  </svg>
+  <main class="page-shell">
+    <section class="hero-grid">
+      <div class="hero-copy">
+        <div class="topbar-chip">
+          <svg class="icon-svg icon-svg--fill icon-svg--trophy" viewBox="0 0 24 24"><use href="#icon-trophy"></use></svg>
+          <span>FASST 150-Point System</span>
+        </div>
+        <h1>FASST Combine Calculator</h1>
+        <p>
+          Grade and gender-based scoring for FASST athletes. Enter testing data, convert trap bar
+          strength to bodyweight ratio, and see the live category breakdown, total score, tier, and projection.
+        </p>
+      </div>
+
+      <div class="hero-stats">
+        <article class="stat-card score-lock-target">
+          <div class="icon-badge"><svg class="icon-svg icon-svg--outline" viewBox="0 0 24 24"><use href="#icon-gauge-custom"></use></svg></div>
+          <div>
+            <span class="stat-label">Live score</span>
+            <strong id="hero-live-score">0.0 / 150</strong>
+          </div>
+          <div class="score-lock-overlay">
+            <button type="button" class="score-lock-glass score-lock-trigger">
+              <svg class="score-lock-icon" viewBox="0 0 16 16"><use href="#icon-lock"></use></svg>
+              <span>Log in to view score</span>
+            </button>
+          </div>
+        </article>
+
+        <article class="stat-card score-lock-target">
+          <div class="icon-badge"><svg class="icon-svg icon-svg--fill" viewBox="0 0 16 16"><use href="#icon-tier-bars"></use></svg></div>
+          <div>
+            <span class="stat-label">Tier</span>
+            <strong id="hero-tier">Foundation Phase</strong>
+          </div>
+          <div class="score-lock-overlay">
+            <button type="button" class="score-lock-glass score-lock-trigger">
+              <svg class="score-lock-icon" viewBox="0 0 16 16"><use href="#icon-lock"></use></svg>
+              <span>Log in to view tier</span>
+            </button>
+          </div>
+        </article>
+
+        <article class="stat-card score-lock-target">
+          <div class="icon-badge"><svg class="icon-svg icon-svg--fill" viewBox="0 0 16 16"><use href="#icon-shield-check"></use></svg></div>
+          <div>
+            <span class="stat-label">Projection</span>
+            <strong id="hero-projection">Needs physical development</strong>
+          </div>
+          <div class="score-lock-overlay">
+            <button type="button" class="score-lock-glass score-lock-trigger">
+              <svg class="score-lock-icon" viewBox="0 0 16 16"><use href="#icon-lock"></use></svg>
+              <span>Log in to view projection</span>
+            </button>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="main-grid" aria-label="FASST combine calculator">
+      <div class="left-column">
+        <form id="calculator-form" class="stack-layout">
+          <section class="panel section-panel">
+            <div class="section-head">
+              <div class="section-icon"><svg class="icon-svg icon-svg--fill" viewBox="0 0 14 14"><use href="#icon-athlete-profile"></use></svg></div>
+              <div>
+                <h2>Athlete Information</h2>
+                <p>Athletes are compared only to their same grade and gender peer group.</p>
+              </div>
+              <div class="session-actions">
+                <button id="athlete-login-button" type="button" class="session-meta">Log In</button>
+                <button id="edit-profile-button" type="button" class="ghost-button ghost-button--small hidden">Edit Profile</button>
+              </div>
+            </div>
+
+            <div class="athlete-grid athlete-grid--four">
+              <label class="field">
+                <span>First Name</span>
+                <input name="firstName" type="text" autocomplete="given-name" placeholder="First name">
+              </label>
+
+              <label class="field">
+                <span>Last Name</span>
+                <input name="lastName" type="text" autocomplete="family-name" placeholder="Last name">
+              </label>
+
+              <label class="field">
+                <span>Gender</span>
+                <select name="gender" required>
+                  <option value="">Select gender</option>
+                  <option value="boys">Male</option>
+                  <option value="girls">Female</option>
+                </select>
+              </label>
+
+              <label class="field">
+                <span>Grade / Level</span>
+                <select name="grade" required>
+                  <option value="">Select grade</option>
+                  <option value="9">Freshman (9th)</option>
+                  <option value="10">Sophomore (10th)</option>
+                  <option value="11">Junior (11th)</option>
+                  <option value="12">Senior (12th)</option>
+                </select>
+              </label>
+
+              <label class="field">
+                <span>Bodyweight (lbs)</span>
+                <input name="bodyweight" type="number" min="1" step="0.1" inputmode="decimal" placeholder="e.g. 175" required>
+                <small class="field-note">Required for trap bar ratio</small>
+              </label>
+            </div>
+          </section>
+
+          <section class="panel section-panel">
+            <div class="testing-head">
+              <div>
+                <div class="section-headline">
+                  <div class="section-icon"><svg class="icon-svg icon-svg--outline" viewBox="0 0 24 24"><use href="#icon-sliders"></use></svg></div>
+                  <h2>Enter Testing Numbers</h2>
+                </div>
+                <p>Mobile-friendly. Live score updates as values are entered.</p>
+              </div>
+              <button id="reset-button" type="button" class="ghost-button">Reset</button>
+            </div>
+
+            <div class="testing-grid">
+              <label class="metric-card">
+                <div class="metric-top">
+                  <div>
+                    <strong>40-Yard Dash</strong>
+                    <span>Lower is better</span>
+                  </div>
+                  <small>Max 30 pts</small>
+                </div>
+                <div class="metric-input-wrap">
+                  <input name="forty" type="number" min="0" step="0.01" inputmode="decimal" placeholder="e.g. 4.65" required>
+                  <span class="metric-unit">sec</span>
+                </div>
+              </label>
+
+              <label class="metric-card">
+                <div class="metric-top">
+                  <div>
+                    <strong>Broad Jump</strong>
+                    <span>Higher is better</span>
+                  </div>
+                  <small>Max 15 pts</small>
+                </div>
+                <div class="metric-input-wrap">
+                  <input name="broad" type="number" min="0" step="0.1" inputmode="decimal" placeholder="e.g. 96" required>
+                  <span class="metric-unit">in</span>
+                </div>
+              </label>
+
+              <label class="metric-card">
+                <div class="metric-top">
+                  <div>
+                    <strong>CMJ Jump Height</strong>
+                    <span>Higher is better</span>
+                  </div>
+                  <small>Max 25 pts</small>
+                </div>
+                <div class="metric-input-wrap">
+                  <input name="cmj" type="number" min="0" step="0.1" inputmode="decimal" placeholder="e.g. 24" required>
+                  <span class="metric-unit">in</span>
+                </div>
+              </label>
+
+              <label class="metric-card">
+                <div class="metric-top">
+                  <div>
+                    <strong>CMJ RSI-Mod</strong>
+                    <span>Higher is better</span>
+                  </div>
+                  <small>Max 15 pts</small>
+                </div>
+                <div class="metric-input-wrap">
+                  <input name="rsi" type="number" min="0" step="0.01" inputmode="decimal" placeholder="e.g. 0.28" required>
+                </div>
+              </label>
+
+              <label class="metric-card">
+                <div class="metric-top">
+                  <div>
+                    <strong>Pro Agility 5-10-5</strong>
+                    <span>Lower is better</span>
+                  </div>
+                  <small>Max 20 pts</small>
+                </div>
+                <div class="metric-input-wrap">
+                  <input name="pro" type="number" min="0" step="0.01" inputmode="decimal" placeholder="e.g. 4.25" required>
+                  <span class="metric-unit">sec</span>
+                </div>
+              </label>
+
+              <label class="metric-card">
+                <div class="metric-top">
+                  <div>
+                    <strong>3-Cone L-Drill</strong>
+                    <span>Lower is better</span>
+                  </div>
+                  <small>Max 20 pts</small>
+                </div>
+                <div class="metric-input-wrap">
+                  <input name="cone" type="number" min="0" step="0.01" inputmode="decimal" placeholder="e.g. 7.0" required>
+                  <span class="metric-unit">sec</span>
+                </div>
+              </label>
+
+              <label class="metric-card">
+                <div class="metric-top">
+                  <div>
+                    <strong>Trap Bar 1RM</strong>
+                    <span>Higher is better</span>
+                  </div>
+                  <small>Max 15 pts</small>
+                </div>
+                <div class="metric-input-wrap">
+                  <input name="trapBar1RM" type="number" min="0" step="0.1" inputmode="decimal" placeholder="e.g. 265" required>
+                  <span class="metric-unit">lbs</span>
+                </div>
+              </label>
+
+              <label class="metric-card">
+                <div class="metric-top">
+                  <div>
+                    <strong>Pull-Ups</strong>
+                    <span>Higher is better</span>
+                  </div>
+                  <small>Max 10 pts</small>
+                </div>
+                <div class="metric-input-wrap">
+                  <input name="pull" type="number" min="0" step="1" inputmode="numeric" placeholder="e.g. 12" required>
+                  <span class="metric-unit">reps</span>
+                </div>
+              </label>
+            </div>
+
+            <div class="submit-row">
+              <p id="data-status" class="data-status" role="status" aria-live="polite">Loading scoring tables...</p>
+              <div class="action-row">
+                <button id="save-draft-button" type="button" class="secondary-button">Save Draft</button>
+                <button id="submit-button" type="submit" class="primary-button" disabled>Submit Results</button>
+              </div>
+              <p id="completion-status" class="completion-status">Fill in all 8 events to submit (0/8 complete).</p>
+            </div>
+          </section>
+        </form>
+      </div>
+
+      <div class="right-column">
+        <section id="results-panel" class="panel result-panel" aria-live="polite">
+          <div class="result-head">
+            <div>
+              <p class="result-kicker">Live Result</p>
+              <h2 id="athlete-result-name">Athlete</h2>
+              <p id="comparison-copy" class="result-copy">Compared against athletes in the selected peer group.</p>
+            </div>
+            <div class="rating-box">
+              <span>FASST Rating</span>
+              <strong><span id="total-score">0.0</span> <small>/ 150</small></strong>
+            </div>
+          </div>
+
+          <div class="score-progress-track">
+            <div id="score-progress-bar" class="score-progress-bar"></div>
+          </div>
+
+          <div class="result-meta-grid score-lock-target">
+            <article class="result-meta-card">
+              <span>Tier</span>
+              <strong id="tier-name">Foundation Phase</strong>
+            </article>
+
+            <article class="result-meta-card">
+              <span>Projection</span>
+              <strong id="projection-name">Needs physical development</strong>
+            </article>
+          <div class="score-lock-overlay">
+            <button type="button" class="score-lock-glass score-lock-trigger">
+              <svg class="score-lock-icon" viewBox="0 0 16 16"><use href="#icon-lock"></use></svg>
+              <span>Log in to unlock tier and projection</span>
+            </button>
+          </div>
+          </div>
+
+          <section class="disclaimer-card">
+            <p id="score-explainer">
+              This score is a performance benchmark. It does not guarantee recruiting outcomes, scholarship offers, or roster placement.
+            </p>
+          </section>
+          <div class="score-lock-overlay">
+            <button type="button" class="score-lock-glass score-lock-trigger">
+              <svg class="score-lock-icon" viewBox="0 0 16 16"><use href="#icon-lock"></use></svg>
+              <span>Log in to unlock results</span>
+            </button>
+          </div>
+        </section>
+
+        <section class="panel breakdown-panel score-lock-target">
+          <div class="section-head section-head--stack">
+            <div class="section-headline">
+              <div class="section-icon"><svg class="icon-svg icon-svg--outline" viewBox="0 0 16 16"><use href="#icon-breakdown-clipboard"></use></svg></div>
+              <h2>Score Breakdown</h2>
+            </div>
+          </div>
+          <div id="breakdown-list" class="breakdown-list"></div>
+          <div class="score-lock-overlay">
+            <button type="button" class="score-lock-glass score-lock-trigger">
+              <svg class="score-lock-icon" viewBox="0 0 16 16"><use href="#icon-lock"></use></svg>
+              <span>Log in to unlock breakdown</span>
+            </button>
+          </div>
+        </section>
+
+        <section class="panel tier-panel">
+          <div class="section-head section-head--stack">
+            <div>
+              <h2>Tier Scale</h2>
+            </div>
+          </div>
+          <div class="tier-scale">
+            <div class="tier-scale-row tier-scale-row--gold"><strong>Pro Level</strong><span>120-150 pts</span></div>
+            <div class="tier-scale-row tier-scale-row--blue"><strong>Elite</strong><span>95-119 pts</span></div>
+            <div class="tier-scale-row tier-scale-row--green"><strong>Competitive</strong><span>70-94 pts</span></div>
+            <div class="tier-scale-row tier-scale-row--orange"><strong>Developmental</strong><span>40-69 pts</span></div>
+            <div class="tier-scale-row tier-scale-row--gray"><strong>Foundation Phase</strong><span>0-39 pts</span></div>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section id="athlete-dashboard" class="dashboard-shell hidden" aria-label="Athlete profile dashboard">
+      <div class="dashboard-head">
+        <div>
+          <p class="eyebrow">Athlete Profile</p>
+          <h2>Track your scores, progress, and rankings</h2>
+          <p class="dashboard-copy">Your saved profile opens a report card view, submission history, and a live leaderboard.</p>
+        </div>
+      </div>
+
+      <div class="dashboard-tabs" role="tablist" aria-label="Athlete dashboard sections">
+        <button id="tab-score" type="button" class="dashboard-tab is-active" data-dashboard-tab="score">My Score</button>
+        <button id="tab-progress" type="button" class="dashboard-tab" data-dashboard-tab="progress">Progress</button>
+        <button id="tab-leaderboard" type="button" class="dashboard-tab" data-dashboard-tab="leaderboard">Leaderboard</button>
+      </div>
+
+      <div id="dashboard-empty" class="panel dashboard-empty">
+        <strong>Log in and submit a score to build your athlete profile.</strong>
+        <p>Your saved results will show up here automatically.</p>
+      </div>
+
+      <div id="dashboard-score-panel" class="dashboard-panel is-active" data-dashboard-panel="score">
+        <p class="dashboard-section-copy">`My Score` shows your most recent saved submission and turns it into a FASST report card with category results, performance themes, and your current tier projection.</p>
+        <div class="dashboard-actions">
+          <button id="download-scorecard-button" type="button" class="primary-button">Download PDF Scorecard</button>
+        </div>
+        <section class="report-card">
+          <div class="report-top">
+            <div>
+              <p class="report-kicker">FASST Athlete Report Card</p>
+              <h3 id="report-athlete-name">Athlete</h3>
+              <p id="report-athlete-meta" class="report-meta">Save a result to see your report card.</p>
+            </div>
+            <div class="report-score-block">
+              <strong id="report-overall-score">0</strong>
+              <span>Overall score (/ 150)</span>
+              <div class="report-pill" id="report-tier-pill">Foundation Phase</div>
+            </div>
+          </div>
+
+          <div class="report-range">
+            <div class="report-range-copy">
+              <span id="report-range-label">FASST Score: 0 / 150</span>
+              <strong id="report-range-tier">Foundation Phase</strong>
+            </div>
+            <div class="report-scale">
+              <div id="report-scale-marker" class="report-scale-marker"></div>
+              <div class="report-scale-segment report-scale-segment--gray"></div>
+              <div class="report-scale-segment report-scale-segment--orange"></div>
+              <div class="report-scale-segment report-scale-segment--green"></div>
+              <div class="report-scale-segment report-scale-segment--blue"></div>
+              <div class="report-scale-segment report-scale-segment--gold"></div>
+            </div>
+            <div class="report-scale-labels">
+              <span>0</span>
+              <span>Foundation</span>
+              <span>Developmental</span>
+              <span>Competitive</span>
+              <span>Elite</span>
+              <span>Pro</span>
+              <span>150</span>
+            </div>
+          </div>
+        </section>
+
+        <div class="dashboard-grid">
+          <section class="panel dashboard-card">
+            <div class="section-head section-head--stack">
+              <div class="section-headline">
+                <div class="section-icon"><svg class="icon-svg icon-svg--outline" viewBox="0 0 24 24"><use href="#icon-sliders"></use></svg></div>
+                <h3>Combine Results</h3>
+              </div>
+            </div>
+            <div id="score-summary-list" class="score-summary-list"></div>
+          </section>
+
+          <section class="panel dashboard-card">
+            <div class="section-head section-head--stack">
+              <div class="section-headline">
+                <div class="section-icon"><svg class="icon-svg icon-svg--fill" viewBox="0 0 16 16"><use href="#icon-tier-bars"></use></svg></div>
+                <h3>Performance Snapshot</h3>
+              </div>
+            </div>
+            <div id="performance-bars" class="performance-bars"></div>
+          </section>
+
+          <section class="panel dashboard-card dashboard-card--success">
+            <h3>Strengths</h3>
+            <ul id="strengths-list" class="insight-list"></ul>
+          </section>
+
+          <section class="panel dashboard-card dashboard-card--warning">
+            <h3>Development Areas</h3>
+            <ul id="development-list" class="insight-list"></ul>
+          </section>
+        </div>
+
+        <section class="panel dashboard-card">
+          <div class="section-head section-head--stack">
+            <div class="section-headline">
+              <div class="section-icon"><svg class="icon-svg icon-svg--fill" viewBox="0 0 24 24"><use href="#icon-trophy"></use></svg></div>
+              <h3>FASST Tier Projection</h3>
+            </div>
+          </div>
+          <div id="tier-track" class="tier-track"></div>
+          <p id="tier-track-copy" class="data-status">Current FASST score: 0/150.</p>
+        </section>
+      </div>
+
+      <div id="dashboard-progress-panel" class="dashboard-panel" data-dashboard-panel="progress">
+        <div class="dashboard-grid dashboard-grid--progress">
+          <section class="panel dashboard-card">
+            <div class="section-head section-head--stack">
+              <div class="section-headline">
+                <div class="section-icon"><svg class="icon-svg icon-svg--outline" viewBox="0 0 16 16"><use href="#icon-breakdown-clipboard"></use></svg></div>
+                <h3>Progress Overview</h3>
+              </div>
+            </div>
+            <p class="dashboard-section-copy">Choose how to compare your latest saved score: against your most recent prior submission or against your first recorded baseline.</p>
+            <div class="view-toggle" role="tablist" aria-label="Progress comparison mode">
+              <button id="progress-previous-button" type="button" class="switch-button is-active">Vs Previous</button>
+              <button id="progress-baseline-button" type="button" class="switch-button">Vs First</button>
+            </div>
+            <div id="progress-summary" class="progress-summary"></div>
+          </section>
+
+          <section class="panel dashboard-card">
+            <div class="section-head section-head--stack">
+              <div class="section-headline">
+                <div class="section-icon"><svg class="icon-svg icon-svg--outline" viewBox="0 0 24 24"><use href="#icon-history"></use></svg></div>
+                <h3>Submission History</h3>
+              </div>
+            </div>
+            <div id="history-list" class="history-list"></div>
+          </section>
+        </div>
+      </div>
+
+      <div id="dashboard-leaderboard-panel" class="dashboard-panel" data-dashboard-panel="leaderboard">
+        <p class="dashboard-section-copy">`Leaderboard` ranks the best saved score for each athlete. Use filters and card/table views to compare by gender, grade, and score range.</p>
+        <section class="panel dashboard-card leaderboard-controls">
+          <div class="leaderboard-filters">
+            <label class="field">
+              <span>Search</span>
+              <input id="leaderboard-search" type="search" placeholder="Search by athlete name...">
+            </label>
+
+            <label class="field">
+              <span>Gender</span>
+              <select id="leaderboard-gender-filter">
+                <option value="">All Genders</option>
+                <option value="boys">Male</option>
+                <option value="girls">Female</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>Grade</span>
+              <select id="leaderboard-grade-filter">
+                <option value="">All Grades</option>
+                <option value="9">Freshman (9th)</option>
+                <option value="10">Sophomore (10th)</option>
+                <option value="11">Junior (11th)</option>
+                <option value="12">Senior (12th)</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>Min Score</span>
+              <input id="leaderboard-min-score" type="number" min="0" max="150" step="1" placeholder="0">
+            </label>
+
+            <label class="field">
+              <span>Max Score</span>
+              <input id="leaderboard-max-score" type="number" min="0" max="150" step="1" placeholder="150">
+            </label>
+          </div>
+          <div class="leaderboard-toolbar">
+            <p id="leaderboard-count" class="data-status">0 athletes ranked</p>
+            <div class="view-toggle" role="tablist" aria-label="Leaderboard view">
+              <button id="leaderboard-cards-button" type="button" class="switch-button is-active">Cards</button>
+              <button id="leaderboard-table-button" type="button" class="switch-button">Table</button>
+            </div>
+          </div>
+        </section>
+
+        <div id="leaderboard-cards" class="leaderboard-cards"></div>
+
+        <section id="leaderboard-table-shell" class="panel dashboard-card hidden">
+          <div class="leaderboard-table-wrap">
+            <table class="leaderboard-table">
+              <thead>
+                <tr>
+                  <th>Rank</th>
+                  <th>Athlete</th>
+                  <th>Gender</th>
+                  <th>Grade</th>
+                  <th>Total Score</th>
+                  <th>Tier</th>
+                  <th>Projection</th>
+                </tr>
+              </thead>
+              <tbody id="leaderboard-table-body"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <div id="gate-modal" class="modal hidden" aria-hidden="true">
+    <div class="modal-backdrop" data-close="true"></div>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="gate-title">
+      <button id="modal-close" type="button" class="modal-close" aria-label="Close dialog">×</button>
+
+      <div class="modal-step is-active" data-step="zip">
+        <p class="eyebrow">Before results</p>
+        <h2 id="gate-title">Tell us where you are training from</h2>
+        <p class="modal-copy">Enter a ZIP code before results unlock. Existing athletes can log in from anywhere.</p>
+
+        <form id="zip-form" class="modal-form">
+          <label class="field">
+            <span>ZIP code</span>
+            <input id="zip-input" name="zip" type="text" inputmode="numeric" autocomplete="postal-code" maxlength="10" required>
+          </label>
+
+          <label class="checkbox-field checkbox-field--account">
+            <input id="existing-account-checkbox" name="hasAccount" type="checkbox">
+            <span>I already have an account</span>
+          </label>
+
+          <p id="zip-status" class="inline-status" role="status" aria-live="polite"></p>
+          <button id="zip-submit-button" type="submit" class="primary-button primary-button--full">Continue</button>
+        </form>
+      </div>
+
+      <div class="modal-step" data-step="lead">
+        <p class="eyebrow">Local athlete</p>
+        <h2>Complete the FASST lead form</h2>
+        <p class="modal-copy">You are within 25 miles of Winchester, VA, so we are showing the local lead form before your results.</p>
+        <div id="lead-form-host" class="lead-form-host"></div>
+        <p id="lead-status" class="inline-status" role="status" aria-live="polite">Submit the lead form first, then create an account to save and unlock results.</p>
+        <div class="action-row action-row--stack">
+          <button id="lead-create-account-button" type="button" class="primary-button primary-button--full" disabled>Create Account To Save My Data</button>
+        </div>
+      </div>
+
+      <div class="modal-step" data-step="auth">
+        <p class="eyebrow">Athlete account</p>
+        <h2 id="auth-title">Log in or create an account</h2>
+        <p class="modal-copy">Accounts are ready for saved profiles, score history, and future leaderboards.</p>
+
+        <div class="auth-switcher" role="tablist" aria-label="Authentication mode">
+          <button id="login-tab" type="button" class="switch-button is-active">Log In</button>
+          <button id="register-tab" type="button" class="switch-button">Create Account</button>
+        </div>
+
+        <form id="auth-form" class="modal-form">
+          <div id="register-fields" class="field-grid field-grid--auth hidden">
+            <label class="field">
+              <span>First name</span>
+              <input name="firstName" type="text" autocomplete="given-name">
+            </label>
+            <label class="field">
+              <span>Last name</span>
+              <input name="lastName" type="text" autocomplete="family-name">
+            </label>
+          </div>
+
+          <label class="field">
+            <span>Email</span>
+            <input name="email" type="email" autocomplete="email" required>
+          </label>
+
+          <label class="field">
+            <span>Password</span>
+            <input name="password" type="password" autocomplete="current-password" minlength="6" required>
+          </label>
+
+          <p id="auth-status" class="inline-status" role="status" aria-live="polite"></p>
+          <button id="auth-submit" type="submit" class="primary-button primary-button--full">Log In</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div id="profile-modal" class="modal hidden" aria-hidden="true">
+    <div class="modal-backdrop" data-profile-close="true"></div>
+    <div class="modal-card modal-card--profile" role="dialog" aria-modal="true" aria-labelledby="profile-title">
+      <button id="profile-modal-close" type="button" class="modal-close" aria-label="Close profile editor">×</button>
+
+      <p class="eyebrow">Athlete profile</p>
+      <h2 id="profile-title">Edit your profile</h2>
+      <p class="modal-copy">Update your athlete details so saved scores, history, and future leaderboards stay accurate.</p>
+
+      <form id="profile-form" class="modal-form">
+        <div class="field-grid field-grid--auth">
+          <label class="field">
+            <span>First name</span>
+            <input name="firstName" type="text" autocomplete="given-name" required>
+          </label>
+
+          <label class="field">
+            <span>Last name</span>
+            <input name="lastName" type="text" autocomplete="family-name" required>
+          </label>
+        </div>
+
+        <div class="field-grid field-grid--auth">
+          <label class="field">
+            <span>Height</span>
+            <input name="height" type="text" autocomplete="off" placeholder="e.g. 5'10&quot; or 70 in">
+          </label>
+
+          <label class="field">
+            <span>Weight (lbs)</span>
+            <input name="bodyweight" type="number" min="1" step="0.1" inputmode="decimal" placeholder="e.g. 175">
+          </label>
+        </div>
+
+        <div class="field-grid field-grid--auth">
+          <label class="field">
+            <span>Gender</span>
+            <select name="gender" required>
+              <option value="">Select gender</option>
+              <option value="boys">Male</option>
+              <option value="girls">Female</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Grade / Level</span>
+            <select name="grade" required>
+              <option value="">Select grade</option>
+              <option value="9">Freshman (9th)</option>
+              <option value="10">Sophomore (10th)</option>
+              <option value="11">Junior (11th)</option>
+              <option value="12">Senior (12th)</option>
+            </select>
+          </label>
+        </div>
+
+        <label class="field">
+          <span>Email</span>
+          <input name="email" type="email" autocomplete="email" required>
+        </label>
+
+        <label class="field">
+          <span>New password</span>
+          <input name="password" type="password" autocomplete="new-password" minlength="6" placeholder="Leave blank to keep current password">
+        </label>
+
+        <p id="profile-status" class="inline-status" role="status" aria-live="polite"></p>
+
+        <div class="action-row">
+          <button id="profile-cancel-button" type="button" class="secondary-button">Cancel</button>
+          <button id="profile-save-button" type="submit" class="primary-button">Save Profile</button>
+        </div>
+
+        <button id="profile-logout-button" type="button" class="profile-logout-button">Log Out</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    window.FASST_WIDGET_CONFIG = {
+      apiBaseUrl: "https://script.google.com/macros/s/AKfycbz2eVXLURymaYTRBAiJqJkujAvNvOwIqdJNTMp8-F9A9VZse747Te1LxvBmnut04LSK/exec?route="
+    };
+  </script>
+  <script src="./app.js"></script>
+</body>
+</html>
