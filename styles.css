@@ -45,7 +45,7 @@ button, input, select { font: inherit; }
 
 .hero-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  grid-template-columns: 1fr;
   gap: 24px;
   align-items: start;
 }
@@ -75,7 +75,6 @@ button, input, select { font: inherit; }
 .testing-head h2,
 .result-head h2,
 .rating-box strong,
-.stat-card strong,
 .result-meta-card strong,
 .tier-panel h2 {
   margin: 0;
@@ -95,14 +94,7 @@ button, input, select { font: inherit; }
   line-height: 1.5;
 }
 
-.hero-stats {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
-}
-
 .panel,
-.stat-card,
 .modal-card {
   background: var(--panel);
   border: 1px solid var(--line);
@@ -177,12 +169,33 @@ body.scores-locked .score-lock-overlay {
 .stat-label,
 .rating-box span,
 .result-kicker {
-  display: block;
   color: var(--muted);
   font-size: 0.9rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.stat-label,
+.rating-box span {
+  display: block;
+}
+
+.result-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.result-kicker::before {
+  content: "";
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  background-color: var(--green);
+  filter: drop-shadow(0 0 8px rgba(34, 197, 94, 0.5)) drop-shadow(0 0 14px rgba(34, 197, 94, 0.24));
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M11 12a1 1 0 1 0 2 0 1 1 0 1 0 -2 0' stroke-width='2'/%3E%3Cpath d='M7 12a5 5 0 1 0 10 0 5 5 0 1 0 -10 0' stroke-width='2'/%3E%3Cpath d='m15.9 20.11 0 0.01' stroke-width='2'/%3E%3Cpath d='m19.04 17.61 0 0.01' stroke-width='2'/%3E%3Cpath d='m20.77 14 0 0.01' stroke-width='2'/%3E%3Cpath d='m20.77 10 0 0.01' stroke-width='2'/%3E%3Cpath d='m19.04 6.39 0 0.01' stroke-width='2'/%3E%3Cpath d='m15.9 3.89 0 0.01' stroke-width='2'/%3E%3Cpath d='m12 3 0 0.01' stroke-width='2'/%3E%3Cpath d='m8.1 3.89 0 0.01' stroke-width='2'/%3E%3Cpath d='m4.96 6.39 0 0.01' stroke-width='2'/%3E%3Cpath d='m3.23 10 0 0.01' stroke-width='2'/%3E%3Cpath d='m3.23 14 0 0.01' stroke-width='2'/%3E%3Cpath d='m4.96 17.61 0 0.01' stroke-width='2'/%3E%3Cpath d='m8.1 20.11 0 0.01' stroke-width='2'/%3E%3Cpath d='m12 21 0 0.01' stroke-width='2'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M11 12a1 1 0 1 0 2 0 1 1 0 1 0 -2 0' stroke-width='2'/%3E%3Cpath d='M7 12a5 5 0 1 0 10 0 5 5 0 1 0 -10 0' stroke-width='2'/%3E%3Cpath d='m15.9 20.11 0 0.01' stroke-width='2'/%3E%3Cpath d='m19.04 17.61 0 0.01' stroke-width='2'/%3E%3Cpath d='m20.77 14 0 0.01' stroke-width='2'/%3E%3Cpath d='m20.77 10 0 0.01' stroke-width='2'/%3E%3Cpath d='m19.04 6.39 0 0.01' stroke-width='2'/%3E%3Cpath d='m15.9 3.89 0 0.01' stroke-width='2'/%3E%3Cpath d='m12 3 0 0.01' stroke-width='2'/%3E%3Cpath d='m8.1 3.89 0 0.01' stroke-width='2'/%3E%3Cpath d='m4.96 6.39 0 0.01' stroke-width='2'/%3E%3Cpath d='m3.23 10 0 0.01' stroke-width='2'/%3E%3Cpath d='m3.23 14 0 0.01' stroke-width='2'/%3E%3Cpath d='m4.96 17.61 0 0.01' stroke-width='2'/%3E%3Cpath d='m8.1 20.11 0 0.01' stroke-width='2'/%3E%3Cpath d='m12 21 0 0.01' stroke-width='2'/%3E%3C/svg%3E") center / contain no-repeat;
 }
 
 .stat-card strong,
@@ -519,16 +532,27 @@ body.scores-locked .score-lock-overlay {
 }
 
 .rating-box {
-  display: grid;
-  justify-items: start;
-  min-width: 200px;
+  position: relative;
+  min-width: 220px;
+}
+
+.result-meta-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.result-meta-top--score {
+  align-items: center;
 }
 
 .rating-box strong {
   display: flex;
   align-items: baseline;
   gap: 10px;
-  font-size: clamp(3rem, 4.5vw, 4rem);
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  font-size: clamp(2.6rem, 4vw, 3.6rem);
 }
 
 #total-score {
@@ -577,7 +601,8 @@ body.scores-locked .score-lock-overlay {
   background: #fafcff;
 }
 
-.result-meta-card span {
+.result-meta-card span,
+.rating-box span {
   display: block;
   color: var(--muted);
   font-size: 0.95rem;
@@ -1113,20 +1138,22 @@ body.scores-locked .score-lock-overlay {
 .leaderboard-table-name {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
 }
 
 .fasst-athlete-badge {
+  margin-left: 2px;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
+  gap: 6px;
+  min-height: 22px;
+  padding: 4px 8px 4px 6px;
   border-radius: 999px;
   background: #eef5ff;
-  border: 1px solid rgba(44, 111, 226, 0.18);
+  border: 1px solid rgba(44, 111, 226, 0.24);
+  box-shadow: 0 4px 10px rgba(44, 111, 226, 0.12);
   flex: 0 0 auto;
-  overflow: hidden;
+  white-space: nowrap;
 }
 
 .fasst-athlete-badge img {
@@ -1134,6 +1161,13 @@ body.scores-locked .score-lock-overlay {
   width: 14px;
   height: 14px;
   object-fit: contain;
+}
+
+.fasst-athlete-badge__label {
+  font-size: 0.67rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--blue);
 }
 
 .leaderboard-card-tags {
@@ -1356,7 +1390,6 @@ body.scores-locked .score-lock-overlay {
 @media (max-width: 1180px) {
   .hero-grid,
   .main-grid,
-  .hero-stats,
   .dashboard-grid,
   .dashboard-grid--progress,
   .leaderboard-filters,
@@ -1370,10 +1403,6 @@ body.scores-locked .score-lock-overlay {
 }
 
 @media (max-width: 760px) {
-  .hero-stats {
-    display: none;
-  }
-
   .page-shell {
     width: min(100% - 16px, 100%);
     padding-top: 16px;
@@ -1414,7 +1443,8 @@ body.scores-locked .score-lock-overlay {
 
   .session-actions {
     width: 100%;
-    justify-content: flex-start;
+    justify-content: flex-end;
+    margin-left: auto;
   }
 
   .dashboard-tabs {
@@ -1454,4 +1484,9 @@ body.scores-locked .score-lock-overlay {
     border-top-right-radius: 24px;
     box-shadow: 0 -18px 42px rgba(17, 24, 39, 0.18);
   }
+}
+
+.results-panel .section-headline .section-icon,
+.rating-box .result-meta-top--score .icon-badge {
+  display: none !important;
 }
