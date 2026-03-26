@@ -70,9 +70,6 @@
     submitButton: document.getElementById("submit-button"),
     dataStatus: document.getElementById("data-status"),
     completionStatus: document.getElementById("completion-status"),
-    heroLiveScore: document.getElementById("hero-live-score"),
-    heroTier: document.getElementById("hero-tier"),
-    heroProjection: document.getElementById("hero-projection"),
     totalScore: document.getElementById("total-score"),
     scoreProgressBar: document.getElementById("score-progress-bar"),
     tierName: document.getElementById("tier-name"),
@@ -265,6 +262,10 @@
       localLeadRequired: false,
       isFasstAthlete: true
     };
+    state.pendingLeadAccount = {
+      ...(state.pendingLeadAccount || {}),
+      isFasstAthlete: true
+    };
     setAuthMode("register");
     prefillRegisterForm(state.pendingLeadAccount);
     updateInlineStatus(elements.zipStatus, "");
@@ -276,6 +277,10 @@
       zip: "",
       distanceMiles: null,
       localLeadRequired: false,
+      isFasstAthlete: false
+    };
+    state.pendingLeadAccount = {
+      ...(state.pendingLeadAccount || {}),
       isFasstAthlete: false
     };
     elements.zipForm.reset();
@@ -453,9 +458,9 @@
           return;
         }
 
-        const isFasstAthlete = state.gateContext ? state.gateContext.isFasstAthlete !== false : false;
+        const isFasstAthlete = state.gateContext ? state.gateContext.isFasstAthlete !== false : Boolean(state.pendingLeadAccount && state.pendingLeadAccount.isFasstAthlete);
         const zipForUser = state.gateContext && state.gateContext.isFasstAthlete === false ? (state.gateContext.zip || "") : "";
-        user = await registerUser({ firstName, lastName, email, password, zip: zipForUser, isFasstAthlete });
+        user = await registerUser({ firstName, lastName, email, password, zip: zipForUser, isFasstAthlete, is_fasst_athlete: isFasstAthlete ? "yes" : "no" });
       } else {
         user = await loginUser({ email, password });
       }
@@ -924,9 +929,6 @@
 
   function updateSummaryCards(result) {
     const formatted = formatScore(result.totalScore);
-    elements.heroLiveScore.textContent = `${formatted} / 150`;
-    elements.heroTier.textContent = result.tier;
-    elements.heroProjection.textContent = result.projection;
     elements.totalScore.textContent = formatted;
     elements.tierName.textContent = result.tier;
     elements.projectionName.textContent = result.projection;
@@ -1217,7 +1219,8 @@
       firstName: firstNameField ? firstNameField.value.trim() : "",
       lastName: lastNameField ? lastNameField.value.trim() : "",
       email: emailField ? emailField.value.trim().toLowerCase() : "",
-      zip: zipField ? zipField.value.trim() : (state.gateContext ? state.gateContext.zip || "" : "")
+      zip: zipField ? zipField.value.trim() : (state.gateContext ? state.gateContext.zip || "" : ""),
+      isFasstAthlete: false
     };
 
     updateInlineStatus(elements.leadStatus, "Thanks! Finish creating your account to continue.", false, true);
@@ -1301,7 +1304,7 @@
     if (users.find((user) => user.email === userInput.email)) {
       throw new Error("An account with that email already exists. Log in instead.");
     }
-    const user = { id: `user_${Date.now()}`, ...userInput };
+    const user = { id: `user_${Date.now()}`, ...userInput, isFasstAthlete: Boolean(userInput.isFasstAthlete) };
     users.push(user);
     localStorage.setItem("fasstUsers", JSON.stringify(users));
     return user;
@@ -1462,10 +1465,14 @@
   }
 
   function renderFasstAthleteBadge(row) {
-    if (!isTruthyFasstAthlete(row.isFasstAthlete ?? row.is_fasst_athlete ?? row.fasst_athlete)) {
+    const rowFlag = isTruthyFasstAthlete(row.isFasstAthlete ?? row.is_fasst_athlete ?? row.fasst_athlete);
+    const sameUser = state.currentUser && String(row.user_id || row.userId || "") === String(state.currentUser.id || "");
+    const sameName = state.currentUser && [state.currentUser.firstName, state.currentUser.lastName].filter(Boolean).join(" ").trim().toLowerCase() === String(row.athlete_name || "").trim().toLowerCase();
+    const shouldShow = rowFlag || Boolean(state.currentUser && state.currentUser.isFasstAthlete && (sameUser || sameName));
+    if (!shouldShow) {
       return "";
     }
-    return `<span class="fasst-athlete-badge" title="FASST athlete"><img src="${CONFIG.fasstFaviconUrl}" alt="FASST athlete badge"></span>`;
+    return `<span class="fasst-athlete-badge" title="FASST athlete"><img src="${CONFIG.fasstFaviconUrl}" alt="FASST athlete badge"><span class="fasst-athlete-badge__label">FASST</span></span>`;
   }
 
   function buildResultRecord(result) {
