@@ -32,6 +32,24 @@
       <path d="m12 14 4 -4"></path>
       <path d="M3.34 19a10 10 0 1 1 17.32 0"></path>
     </symbol>
+    <symbol id="icon-live-photo" viewBox="0 0 24 24">
+      <path d="M11 12a1 1 0 1 0 2 0 1 1 0 1 0 -2 0"></path>
+      <path d="M7 12a5 5 0 1 0 10 0 5 5 0 1 0 -10 0"></path>
+      <path d="m15.9 20.11 0 0.01"></path>
+      <path d="m19.04 17.61 0 0.01"></path>
+      <path d="m20.77 14 0 0.01"></path>
+      <path d="m20.77 10 0 0.01"></path>
+      <path d="m19.04 6.39 0 0.01"></path>
+      <path d="m15.9 3.89 0 0.01"></path>
+      <path d="m12 3 0 0.01"></path>
+      <path d="m8.1 3.89 0 0.01"></path>
+      <path d="m4.96 6.39 0 0.01"></path>
+      <path d="m3.23 10 0 0.01"></path>
+      <path d="m3.23 14 0 0.01"></path>
+      <path d="m4.96 17.61 0 0.01"></path>
+      <path d="m8.1 20.11 0 0.01"></path>
+      <path d="m12 21 0 0.01"></path>
+    </symbol>
     <symbol id="icon-tier-bars" viewBox="0 0 16 16">
       <path d="M15 15h-4V2h4Z" fill="currentColor"></path>
       <path d="M10 15h-4V6h4Z" fill="currentColor"></path>
@@ -98,49 +116,7 @@
         </p>
       </div>
 
-      <div class="hero-stats">
-        <article class="stat-card score-lock-target">
-          <div class="icon-badge"><svg class="icon-svg icon-svg--outline" viewBox="0 0 24 24"><use href="#icon-gauge-custom"></use></svg></div>
-          <div>
-            <span class="stat-label">Live score</span>
-            <strong id="hero-live-score">0.0 / 150</strong>
-          </div>
-          <div class="score-lock-overlay">
-            <button type="button" class="score-lock-glass score-lock-trigger">
-              <svg class="score-lock-icon" viewBox="0 0 16 16"><use href="#icon-lock"></use></svg>
-              <span>Log in to view score</span>
-            </button>
-          </div>
-        </article>
 
-        <article class="stat-card score-lock-target">
-          <div class="icon-badge"><svg class="icon-svg icon-svg--fill" viewBox="0 0 16 16"><use href="#icon-tier-bars"></use></svg></div>
-          <div>
-            <span class="stat-label">Tier</span>
-            <strong id="hero-tier">Foundation Phase</strong>
-          </div>
-          <div class="score-lock-overlay">
-            <button type="button" class="score-lock-glass score-lock-trigger">
-              <svg class="score-lock-icon" viewBox="0 0 16 16"><use href="#icon-lock"></use></svg>
-              <span>Log in to view tier</span>
-            </button>
-          </div>
-        </article>
-
-        <article class="stat-card score-lock-target">
-          <div class="icon-badge"><svg class="icon-svg icon-svg--fill" viewBox="0 0 16 16"><use href="#icon-shield-check"></use></svg></div>
-          <div>
-            <span class="stat-label">Projection</span>
-            <strong id="hero-projection">Needs physical development</strong>
-          </div>
-          <div class="score-lock-overlay">
-            <button type="button" class="score-lock-glass score-lock-trigger">
-              <svg class="score-lock-icon" viewBox="0 0 16 16"><use href="#icon-lock"></use></svg>
-              <span>Log in to view projection</span>
-            </button>
-          </div>
-        </article>
-      </div>
     </section>
 
     <section class="main-grid" aria-label="FASST combine calculator">
@@ -339,13 +315,27 @@
         <section id="results-panel" class="panel result-panel" aria-live="polite">
           <div class="result-head">
             <div>
-              <p class="result-kicker">Live Result</p>
-              <h2 id="athlete-result-name">Athlete</h2>
-              <p id="comparison-copy" class="result-copy">Compared against athletes in the selected peer group.</p>
+              <div class="section-headline">
+                <div>
+                  <p class="result-kicker">Live Result</p>
+                  <h2 id="athlete-result-name">Assessment</h2>
+                  <p id="comparison-copy" class="result-copy">Compared against athletes in the selected peer group.</p>
+                </div>
+              </div>
             </div>
-            <div class="rating-box">
-              <span>FASST Rating</span>
-              <strong><span id="total-score">0.0</span> <small>/ 150</small></strong>
+            <div class="rating-box score-lock-target">
+              <div class="result-meta-top result-meta-top--score">
+                <div>
+                  <span>FASST Rating</span>
+                  <strong><span id="total-score">0.0</span> <small>/ 150</small></strong>
+                </div>
+              </div>
+              <div class="score-lock-overlay">
+                <button type="button" class="score-lock-glass score-lock-trigger">
+                  <svg class="score-lock-icon" viewBox="0 0 16 16"><use href="#icon-lock"></use></svg>
+                  <span>Log in to unlock results</span>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -355,13 +345,23 @@
 
           <div class="result-meta-grid score-lock-target">
             <article class="result-meta-card">
-              <span>Tier</span>
-              <strong id="tier-name">Foundation Phase</strong>
+              <div class="result-meta-top">
+                <div class="icon-badge"><svg class="icon-svg icon-svg--fill" viewBox="0 0 16 16"><use href="#icon-tier-bars"></use></svg></div>
+                <div>
+                  <span>Tier</span>
+                  <strong id="tier-name">Foundation Phase</strong>
+                </div>
+              </div>
             </article>
 
             <article class="result-meta-card">
-              <span>Projection</span>
-              <strong id="projection-name">Needs physical development</strong>
+              <div class="result-meta-top">
+                <div class="icon-badge"><svg class="icon-svg icon-svg--fill" viewBox="0 0 16 16"><use href="#icon-shield-check"></use></svg></div>
+                <div>
+                  <span>Projection</span>
+                  <strong id="projection-name">Needs physical development</strong>
+                </div>
+              </div>
             </article>
           <div class="score-lock-overlay">
             <button type="button" class="score-lock-glass score-lock-trigger">
