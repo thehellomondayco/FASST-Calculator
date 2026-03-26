@@ -33,6 +33,7 @@
       { minScore: 40, tier: "Developmental", projection: "Developmental varsity or college upside with growth", summary: "This athlete has a workable base with several measurable opportunities to improve." },
       { minScore: 0, tier: "Foundation Phase", projection: "Needs physical development", summary: "This athlete is still building the performance foundation." }
     ],
+    fasstFaviconUrl: "https://images.squarespace-cdn.com/content/v1/691bc0fb5f7ee703b6452720/2fa7f9ca-8d11-4c25-8924-e6e78e4ebbeb/favicon.ico?format=100w",
     momence: {
       hostId: "153795",
       fields: "firstName,lastName,email,zipCode",
@@ -452,8 +453,9 @@
           return;
         }
 
+        const isFasstAthlete = state.gateContext ? state.gateContext.isFasstAthlete !== false : false;
         const zipForUser = state.gateContext && state.gateContext.isFasstAthlete === false ? (state.gateContext.zip || "") : "";
-        user = await registerUser({ firstName, lastName, email, password, zip: zipForUser });
+        user = await registerUser({ firstName, lastName, email, password, zip: zipForUser, isFasstAthlete });
       } else {
         user = await loginUser({ email, password });
       }
@@ -860,7 +862,10 @@
             <div class="leaderboard-score"><strong>${Math.round(Number(row.total_score || 0))}</strong><span>score</span></div>
           </div>
           <div>
-            <div class="leaderboard-card-name">${escapeHtml(row.athlete_name || "Athlete")}</div>
+            <div class="leaderboard-card-name-row">
+              <div class="leaderboard-card-name">${escapeHtml(row.athlete_name || "Athlete")}</div>
+              ${renderFasstAthleteBadge(row)}
+            </div>
             <p class="leaderboard-card-copy">${escapeHtml(row.projection || "FASST athlete")}</p>
           </div>
           <div class="leaderboard-card-tags">
@@ -876,7 +881,7 @@
     elements.leaderboardTableBody.innerHTML = filteredRows.map((row, index) => `
       <tr>
         <td>#${index + 1}</td>
-        <td>${escapeHtml(row.athlete_name || "Athlete")}</td>
+        <td><span class="leaderboard-table-name">${escapeHtml(row.athlete_name || "Athlete")}</span>${renderFasstAthleteBadge(row)}</td>
         <td>${escapeHtml(formatGender(row.gender))}</td>
         <td>${escapeHtml(formatGrade(row.grade))}</td>
         <td>${formatScore(row.total_score)}</td>
@@ -1340,6 +1345,7 @@
       lastName: profileInput.lastName,
       email: profileInput.email,
       zip: profileInput.zip,
+      isFasstAthlete: profileInput.isFasstAthlete === "yes",
       gender: profileInput.gender,
       grade: profileInput.grade,
       height: profileInput.height,
@@ -1389,6 +1395,7 @@
       gender: state.currentUser.gender || livePayload.gender || "",
       grade: state.currentUser.grade || livePayload.grade || "",
       email: state.currentUser.email || "",
+      isFasstAthlete: state.currentUser.isFasstAthlete ? "yes" : "no",
       password: ""
     };
 
@@ -1445,6 +1452,22 @@
     return Number(value || 0).toFixed(1);
   }
 
+
+  function isTruthyFasstAthlete(value) {
+    if (typeof value === "boolean") {
+      return value;
+    }
+    const normalized = String(value || "").trim().toLowerCase();
+    return normalized === "yes" || normalized === "true" || normalized === "1";
+  }
+
+  function renderFasstAthleteBadge(row) {
+    if (!isTruthyFasstAthlete(row.isFasstAthlete ?? row.is_fasst_athlete ?? row.fasst_athlete)) {
+      return "";
+    }
+    return `<span class="fasst-athlete-badge" title="FASST athlete"><img src="${CONFIG.fasstFaviconUrl}" alt="FASST athlete badge"></span>`;
+  }
+
   function buildResultRecord(result) {
     const pointsByMetric = Object.fromEntries(result.scoreEntries.map((entry) => [entry.metricKey, entry.points]));
     const athleteName = [result.payload.firstName, result.payload.lastName].filter(Boolean).join(" ");
@@ -1459,6 +1482,7 @@
       first_name: result.payload.firstName || "",
       last_name: result.payload.lastName || "",
       zip: state.gateContext ? state.gateContext.zip : "",
+      is_fasst_athlete: state.currentUser.isFasstAthlete ? "yes" : "no",
       gender: result.payload.gender,
       grade: result.payload.grade,
       bodyweight: result.payload.bodyweight,
@@ -1505,10 +1529,11 @@
       grade: String(formData.get("grade") || "").trim(),
       email: String(formData.get("email") || "").trim().toLowerCase(),
       password: String(formData.get("password") || ""),
-      zip: state.currentUser.zip || (state.gateContext ? state.gateContext.zip : "")
+      zip: state.currentUser.zip || (state.gateContext ? state.gateContext.zip : ""),
+      isFasstAthlete: String(formData.get("isFasstAthlete") || "").trim()
     };
 
-    if (!nextProfile.firstName || !nextProfile.lastName || !nextProfile.email || !nextProfile.gender || !nextProfile.grade) {
+    if (!nextProfile.firstName || !nextProfile.lastName || !nextProfile.email || !nextProfile.gender || !nextProfile.grade || !nextProfile.isFasstAthlete) {
       updateInlineStatus(elements.profileStatus, "Complete the required profile fields before saving.", true);
       return;
     }
@@ -1984,6 +2009,7 @@
       lastName: user.lastName || user.last_name || "",
       email: user.email || "",
       zip: user.zip || "",
+      isFasstAthlete: isTruthyFasstAthlete(user.isFasstAthlete ?? user.is_fasst_athlete ?? user.fasst_athlete),
       gender: user.gender || "",
       grade: user.grade || "",
       height: user.height || "",

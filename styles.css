@@ -1109,6 +1109,33 @@ body.scores-locked .score-lock-overlay {
   font-weight: 700;
 }
 
+.leaderboard-card-name-row,
+.leaderboard-table-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fasst-athlete-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: #eef5ff;
+  border: 1px solid rgba(44, 111, 226, 0.18);
+  flex: 0 0 auto;
+  overflow: hidden;
+}
+
+.fasst-athlete-badge img {
+  display: block;
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
+}
+
 .leaderboard-card-tags {
   justify-content: flex-start;
   flex-wrap: wrap;
