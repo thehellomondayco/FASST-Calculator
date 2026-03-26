@@ -863,7 +863,7 @@
       elements.athleteDashboard.classList.remove("hidden");
     } else {
       elements.athleteLoginButton.classList.remove("hidden");
-      elements.athleteLoginButton.textContent = "Log In";
+      elements.athleteLoginButton.textContent = "Log In/Sign Up";
       elements.athleteLoginButton.disabled = false;
       elements.editProfileButton.classList.add("hidden");
       elements.athleteDashboard.classList.add("hidden");
