@@ -47,6 +47,8 @@
   const state = {
     scoringTables: new Map(),
     pendingResult: null,
+    pendingLeadAccount: null,
+    pendingAuthenticatedUser: null,
     gateContext: null,
     authMode: "login",
     currentUser: readSessionUser(),
@@ -85,7 +87,6 @@
     newFasstButton: document.getElementById("new-fasst-button"),
     zipSubmitButton: document.getElementById("zip-submit-button"),
     zipInput: document.getElementById("zip-input"),
-    existingAccountCheckbox: document.getElementById("existing-account-checkbox"),
     zipStatus: document.getElementById("zip-status"),
     leadStatus: document.getElementById("lead-status"),
     leadCreateAccountButton: document.getElementById("lead-create-account-button"),
@@ -190,8 +191,11 @@
     elements.leadFormHost.addEventListener("submit", handleLeadFormSubmitCapture, true);
     elements.modalClose.addEventListener("click", closeModal);
     elements.gateModal.addEventListener("click", handleBackdropClick);
-    elements.loginTab.addEventListener("click", () => setAuthMode("login"));
-    elements.registerTab.addEventListener("click", () => setAuthMode("register"));
+    elements.loginTab.addEventListener("click", () => {
+      setAuthMode("login");
+      showStep("auth");
+    });
+    elements.registerTab.addEventListener("click", handleRegisterTabClick);
     elements.profileModalClose.addEventListener("click", closeProfileModal);
     elements.profileCancelButton.addEventListener("click", closeProfileModal);
     elements.profileLogoutButton.addEventListener("click", handleProfileLogoutClick);
@@ -228,34 +232,82 @@
   }
 
   function handleAthleteLoginClick() {
+    if (!state.currentUser && state.gateContext && state.gateContext.isFasstAthlete === false) {
+      openModal();
+      if (state.gateContext.localLeadRequired && !state.leadFormSubmitted) {
+        mountLeadForm(state.gateContext.zip, state.pendingLeadAccount || { zip: state.gateContext.zip || "" });
+        showStep("lead");
+        return;
+      }
+      setAuthMode("register");
+      prefillRegisterForm(state.pendingLeadAccount);
+      showStep("auth");
+      return;
+    }
+
     state.gateContext = {
-      zip: state.gateContext ? state.gateContext.zip : "",
+      zip: "",
       distanceMiles: null,
-      localLeadRequired: false
+      localLeadRequired: false,
+      isFasstAthlete: null
     };
+    resetGateStatus();
+    setAuthMode("login");
     openModal();
-    showStep("athlete-check");
-    updateInlineStatus(elements.zipStatus, "");
+    showStep("auth");
   }
 
   function handleExistingFasstClick() {
     state.gateContext = {
       zip: "",
       distanceMiles: null,
-      localLeadRequired: false
+      localLeadRequired: false,
+      isFasstAthlete: true
     };
-    setAuthMode("login");
+    setAuthMode("register");
+    prefillRegisterForm(state.pendingLeadAccount);
     updateInlineStatus(elements.zipStatus, "");
     showStep("auth");
   }
 
   function handleNewFasstClick() {
+    state.gateContext = {
+      zip: "",
+      distanceMiles: null,
+      localLeadRequired: false,
+      isFasstAthlete: false
+    };
+    elements.zipForm.reset();
     updateInlineStatus(elements.zipStatus, "");
     showStep("zip");
   }
 
+  function handleRegisterTabClick() {
+    if (state.leadFormSubmitted && state.pendingLeadAccount) {
+      setAuthMode("register");
+      prefillRegisterForm(state.pendingLeadAccount);
+      showStep("auth");
+      return;
+    }
+
+    if (state.gateContext && state.gateContext.isFasstAthlete === false) {
+      if (state.gateContext.localLeadRequired) {
+        mountLeadForm(state.gateContext.zip, state.pendingLeadAccount || { zip: state.gateContext.zip || "" });
+        showStep("lead");
+        return;
+      }
+      setAuthMode("register");
+      prefillRegisterForm(state.pendingLeadAccount);
+      showStep("auth");
+      return;
+    }
+
+    showStep("athlete-check");
+  }
+
   function handleAthleteLogoutClick() {
     state.currentUser = null;
+    state.pendingAuthenticatedUser = null;
     state.athleteResults = [];
     state.leaderboardRows = [];
     sessionStorage.removeItem("fasstCurrentUser");
@@ -313,10 +365,11 @@
       return;
     }
 
-    state.gateContext = { zip: "", distanceMiles: null, localLeadRequired: false };
-    openModal();
-    showStep("athlete-check");
+    state.gateContext = { zip: "", distanceMiles: null, localLeadRequired: false, isFasstAthlete: null };
     resetGateStatus();
+    setAuthMode("login");
+    openModal();
+    showStep("auth");
   }
 
   async function handleZipSubmit(event) {
@@ -330,21 +383,8 @@
       return;
     }
 
-    state.gateContext = { zip, distanceMiles: null, localLeadRequired: false };
+    state.gateContext = { zip, distanceMiles: null, localLeadRequired: false, isFasstAthlete: false };
     updateInlineStatus(elements.zipStatus, "Checking location...", false);
-
-    if (elements.existingAccountCheckbox.checked) {
-      state.gateContext = {
-        zip,
-        distanceMiles: null,
-        localLeadRequired: false
-      };
-      setAuthMode("login");
-      setButtonLoading(elements.zipSubmitButton, false, "Continue");
-      updateInlineStatus(elements.zipStatus, "");
-      showStep("auth");
-      return;
-    }
 
     if (state.currentUser) {
       setButtonLoading(elements.zipSubmitButton, false, "Continue");
@@ -360,11 +400,12 @@
       state.gateContext.localLeadRequired = distanceMiles <= CONFIG.leadRadiusMiles;
 
       if (state.gateContext.localLeadRequired) {
-        mountLeadForm(zip);
+        mountLeadForm(zip, { zip });
         setButtonLoading(elements.zipSubmitButton, false, "Continue");
         showStep("lead");
       } else {
         setAuthMode("register");
+        prefillRegisterForm(state.pendingLeadAccount);
         setButtonLoading(elements.zipSubmitButton, false, "Continue");
         showStep("auth");
       }
@@ -410,17 +451,14 @@
           updateInlineStatus(elements.authStatus, "Enter first and last name to create an account.", true);
           return;
         }
-        user = await registerUser({ firstName, lastName, email, password, zip: state.gateContext ? state.gateContext.zip : "" });
+
+        const zipForUser = state.gateContext && state.gateContext.isFasstAthlete === false ? (state.gateContext.zip || "") : "";
+        user = await registerUser({ firstName, lastName, email, password, zip: zipForUser });
       } else {
         user = await loginUser({ email, password });
       }
 
-      state.currentUser = user;
-      persistSessionUser(user);
-      syncScoreVisibility();
-      syncLoginButtonState();
-      hydrateFormFromUser();
-      await refreshDashboardData();
+      finalizeAuthenticatedUser(user);
       updateInlineStatus(elements.authStatus, `Welcome, ${user.firstName || user.email}.`, false, true);
       unlockPendingResult();
     } catch (error) {
@@ -863,11 +901,20 @@
       elements.athleteDashboard.classList.remove("hidden");
     } else {
       elements.athleteLoginButton.classList.remove("hidden");
-      elements.athleteLoginButton.textContent = "Log In/Sign Up";
+      elements.athleteLoginButton.textContent = (!state.currentUser && state.gateContext && state.gateContext.isFasstAthlete === false) ? "Complete Sign Up" : "Log In/Sign Up";
       elements.athleteLoginButton.disabled = false;
       elements.editProfileButton.classList.add("hidden");
       elements.athleteDashboard.classList.add("hidden");
     }
+  }
+
+  function finalizeAuthenticatedUser(user) {
+    state.currentUser = user;
+    persistSessionUser(user);
+    syncScoreVisibility();
+    syncLoginButtonState();
+    hydrateFormFromUser();
+    void refreshDashboardData();
   }
 
   function updateSummaryCards(result) {
@@ -1086,10 +1133,29 @@
     button.textContent = label;
   }
 
-  function mountLeadForm(zip) {
+  function prefillRegisterForm(prefill) {
+    if (!elements.authForm) {
+      return;
+    }
+    const firstNameInput = elements.authForm.querySelector('input[name="firstName"]');
+    const lastNameInput = elements.authForm.querySelector('input[name="lastName"]');
+    const emailInput = elements.authForm.querySelector('input[name="email"]');
+    if (firstNameInput) {
+      firstNameInput.value = prefill && prefill.firstName ? prefill.firstName : "";
+    }
+    if (lastNameInput) {
+      lastNameInput.value = prefill && prefill.lastName ? prefill.lastName : "";
+    }
+    if (emailInput && prefill && prefill.email) {
+      emailInput.value = prefill.email;
+    }
+  }
+
+  function mountLeadForm(zip, prefill) {
     state.leadFormSubmitted = false;
     elements.leadCreateAccountButton.disabled = true;
-    updateInlineStatus(elements.leadStatus, "Submit your information and create an account.");
+    elements.leadCreateAccountButton.classList.add("hidden");
+    updateInlineStatus(elements.leadStatus, "Submit your information to continue.");
     elements.leadFormHost.innerHTML = "";
     const mount = document.createElement("div");
     mount.id = "momence-plugin-lead-form";
@@ -1110,16 +1176,51 @@
 
     setTimeout(() => {
       const zipField = elements.leadFormHost.querySelector('input[name="zipCode"]');
+      const firstNameField = elements.leadFormHost.querySelector('input[name="firstName"]');
+      const lastNameField = elements.leadFormHost.querySelector('input[name="lastName"]');
+      const emailField = elements.leadFormHost.querySelector('input[name="email"]');
+      const submitButton = elements.leadFormHost.querySelector('button[type="submit"], input[type="submit"]');
       if (zipField) {
         zipField.value = zip;
+      }
+      if (prefill && firstNameField) {
+        firstNameField.value = prefill.firstName || "";
+      }
+      if (prefill && lastNameField) {
+        lastNameField.value = prefill.lastName || "";
+      }
+      if (prefill && emailField) {
+        emailField.value = prefill.email || "";
+      }
+      if (submitButton) {
+        submitButton.scrollIntoView({ behavior: "smooth", block: "center" });
+        if (typeof submitButton.focus === "function") {
+          submitButton.focus({ preventScroll: true });
+        }
       }
     }, 500);
   }
 
   function handleLeadFormSubmitCapture() {
     state.leadFormSubmitted = true;
-    elements.leadCreateAccountButton.disabled = false;
-    updateInlineStatus(elements.leadStatus, "Lead form submitted. Create your account to save and unlock results.", false, true);
+
+    const firstNameField = elements.leadFormHost.querySelector('input[name="firstName"]');
+    const lastNameField = elements.leadFormHost.querySelector('input[name="lastName"]');
+    const emailField = elements.leadFormHost.querySelector('input[name="email"]');
+    const zipField = elements.leadFormHost.querySelector('input[name="zipCode"]');
+    state.pendingLeadAccount = {
+      firstName: firstNameField ? firstNameField.value.trim() : "",
+      lastName: lastNameField ? lastNameField.value.trim() : "",
+      email: emailField ? emailField.value.trim().toLowerCase() : "",
+      zip: zipField ? zipField.value.trim() : (state.gateContext ? state.gateContext.zip || "" : "")
+    };
+
+    updateInlineStatus(elements.leadStatus, "Thanks! Finish creating your account to continue.", false, true);
+    setTimeout(() => {
+      setAuthMode("register");
+      prefillRegisterForm(state.pendingLeadAccount);
+      showStep("auth");
+    }, 300);
   }
 
   function openModal() {
@@ -1151,10 +1252,14 @@
 
   function resetGateStatus() {
     elements.zipForm.reset();
+    elements.authForm.reset();
     setAuthMode("login");
     setButtonLoading(elements.zipSubmitButton, false, "Continue");
     state.leadFormSubmitted = false;
+    state.pendingLeadAccount = null;
+    state.pendingAuthenticatedUser = null;
     elements.leadCreateAccountButton.disabled = true;
+    elements.leadCreateAccountButton.classList.add("hidden");
     updateInlineStatus(elements.leadStatus, "Submit your information and create an account.");
     updateInlineStatus(elements.zipStatus, "");
     updateInlineStatus(elements.authStatus, "");
