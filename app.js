@@ -81,6 +81,8 @@
     gateModal: document.getElementById("gate-modal"),
     modalClose: document.getElementById("modal-close"),
     zipForm: document.getElementById("zip-form"),
+    existingFasstButton: document.getElementById("existing-fasst-button"),
+    newFasstButton: document.getElementById("new-fasst-button"),
     zipSubmitButton: document.getElementById("zip-submit-button"),
     zipInput: document.getElementById("zip-input"),
     existingAccountCheckbox: document.getElementById("existing-account-checkbox"),
@@ -179,6 +181,8 @@
     elements.resetButton.addEventListener("click", handleReset);
     elements.saveDraftButton.addEventListener("click", handleSaveDraft);
     elements.zipForm.addEventListener("submit", handleZipSubmit);
+    elements.existingFasstButton.addEventListener("click", handleExistingFasstClick);
+    elements.newFasstButton.addEventListener("click", handleNewFasstClick);
     elements.authForm.addEventListener("submit", handleAuthSubmit);
     elements.authForm.addEventListener("keydown", handleFormEnterSubmit);
     elements.zipForm.addEventListener("keydown", handleFormEnterSubmit);
@@ -230,8 +234,24 @@
       localLeadRequired: false
     };
     openModal();
-    showStep("zip");
+    showStep("athlete-check");
     updateInlineStatus(elements.zipStatus, "");
+  }
+
+  function handleExistingFasstClick() {
+    state.gateContext = {
+      zip: "",
+      distanceMiles: null,
+      localLeadRequired: false
+    };
+    setAuthMode("login");
+    updateInlineStatus(elements.zipStatus, "");
+    showStep("auth");
+  }
+
+  function handleNewFasstClick() {
+    updateInlineStatus(elements.zipStatus, "");
+    showStep("zip");
   }
 
   function handleAthleteLogoutClick() {
@@ -295,7 +315,7 @@
 
     state.gateContext = { zip: "", distanceMiles: null, localLeadRequired: false };
     openModal();
-    showStep("zip");
+    showStep("athlete-check");
     resetGateStatus();
   }
 
@@ -1069,7 +1089,7 @@
   function mountLeadForm(zip) {
     state.leadFormSubmitted = false;
     elements.leadCreateAccountButton.disabled = true;
-    updateInlineStatus(elements.leadStatus, "Submit the lead form first, then create an account to save and unlock results.");
+    updateInlineStatus(elements.leadStatus, "Submit your information and create an account.");
     elements.leadFormHost.innerHTML = "";
     const mount = document.createElement("div");
     mount.id = "momence-plugin-lead-form";
@@ -1135,7 +1155,7 @@
     setButtonLoading(elements.zipSubmitButton, false, "Continue");
     state.leadFormSubmitted = false;
     elements.leadCreateAccountButton.disabled = true;
-    updateInlineStatus(elements.leadStatus, "Submit the lead form first, then create an account to save and unlock results.");
+    updateInlineStatus(elements.leadStatus, "Submit your information and create an account.");
     updateInlineStatus(elements.zipStatus, "");
     updateInlineStatus(elements.authStatus, "");
   }

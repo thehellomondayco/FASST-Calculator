@@ -154,7 +154,7 @@
                 <p>Athletes are compared only to their same grade and gender peer group.</p>
               </div>
               <div class="session-actions">
-                <button id="athlete-login-button" type="button" class="session-meta">Log In</button>
+                <button id="athlete-login-button" type="button" class="session-meta">Log In/Sign Up</button>
                 <button id="edit-profile-button" type="button" class="ghost-button ghost-button--small hidden">Edit Profile</button>
               </div>
             </div>
@@ -633,9 +633,21 @@
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="gate-title">
       <button id="modal-close" type="button" class="modal-close" aria-label="Close dialog">×</button>
 
-      <div class="modal-step is-active" data-step="zip">
+      <div class="modal-step is-active" data-step="athlete-check">
         <p class="eyebrow">Before results</p>
-        <h2 id="gate-title">Tell us where you are training from</h2>
+        <h2 id="gate-title">Are you already a FASST athlete?</h2>
+
+        <div class="modal-form">
+          <div class="action-row action-row--stack">
+            <button id="existing-fasst-button" type="button" class="primary-button primary-button--full">Yes, I am already a FASST athlete</button>
+            <button id="new-fasst-button" type="button" class="secondary-button">I am not a FASST Athelte</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-step" data-step="zip">
+        <p class="eyebrow">Before results</p>
+        <h2>Tell us where you are training from</h2>
         <p class="modal-copy">Enter a ZIP code before results unlock. Existing athletes can log in from anywhere.</p>
 
         <form id="zip-form" class="modal-form">
