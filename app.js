@@ -45,6 +45,32 @@
     }
   };
 
+  const DASHBOARD_METRIC_ORDER = ["forty", "broad", "cmj", "rsi", "pro", "cone"];
+  const DASHBOARD_METRIC_LABELS = {
+    forty: "40-Yard Dash",
+    broad: "Broad Jump",
+    cmj: "CMJ Jump Height",
+    rsi: "CMJ RSI-Mod",
+    pro: "Pro Agility (5-10-5)",
+    cone: "3-Cone L-Drill"
+  };
+  const DASHBOARD_METRIC_MAX_POINTS = {
+    forty: 25,
+    broad: 10,
+    cmj: 15,
+    rsi: 10,
+    pro: 20,
+    cone: 20
+  };
+  const DASHBOARD_TOTAL_MAX_SCORE = 100;
+  const DASHBOARD_SCORE_TIERS = [
+    { minScore: 80, tier: "Pro Level", projection: "High-level NCAA Division I trajectory" },
+    { minScore: 63, tier: "Elite", projection: "Strong NCAA Division I or Division II projection" },
+    { minScore: 47, tier: "Competitive", projection: "Division II, Division III, NAIA, or fast-rising varsity upside" },
+    { minScore: 27, tier: "Developmental", projection: "Developmental varsity or college upside with growth" },
+    { minScore: 0, tier: "Foundation Phase", projection: "Needs physical development" }
+  ];
+
   const state = {
     scoringTables: new Map(),
     pendingResult: null,
@@ -696,7 +722,7 @@
       elements.reportAthleteMeta.textContent = "Submit your first result to unlock the report card.";
       elements.reportOverallScore.textContent = "0";
       elements.reportTierPill.textContent = "No scores yet";
-      elements.reportRangeLabel.textContent = "FASST Score: 0 / 150";
+      elements.reportRangeLabel.textContent = `FASST Score: 0 / ${DASHBOARD_TOTAL_MAX_SCORE}`;
       elements.reportRangeTier.textContent = "Foundation Phase";
       elements.reportScaleMarker.style.left = "0%";
       elements.scoreSummaryList.innerHTML = `<p class="data-status">No saved combine submission yet.</p>`;
@@ -712,11 +738,11 @@
     const athleteName = latest.athlete_name || [state.currentUser.firstName, state.currentUser.lastName].filter(Boolean).join(" ") || "Athlete";
     elements.reportAthleteName.textContent = athleteName;
     elements.reportAthleteMeta.textContent = `${formatGender(latest.gender)} • ${formatGrade(latest.grade)} • Latest saved ${formatDate(latest.date)}`;
-    elements.reportOverallScore.textContent = Math.round(Number(latest.total_score || 0));
-    elements.reportTierPill.textContent = latest.tier || "Foundation Phase";
-    elements.reportRangeLabel.textContent = `FASST Score: ${formatScore(latest.total_score)} / 150`;
-    elements.reportRangeTier.textContent = latest.tier || "Foundation Phase";
-    elements.reportScaleMarker.style.left = `${Math.max(0, Math.min(100, (Number(latest.total_score || 0) / 150) * 100))}%`;
+    elements.reportOverallScore.textContent = Math.round(Number(latest.dashboard_total_score || 0));
+    elements.reportTierPill.textContent = latest.dashboard_tier || "Foundation Phase";
+    elements.reportRangeLabel.textContent = `FASST Score: ${formatScore(latest.dashboard_total_score)} / ${DASHBOARD_TOTAL_MAX_SCORE}`;
+    elements.reportRangeTier.textContent = latest.dashboard_tier || "Foundation Phase";
+    elements.reportScaleMarker.style.left = `${Math.max(0, Math.min(100, (Number(latest.dashboard_total_score || 0) / DASHBOARD_TOTAL_MAX_SCORE) * 100))}%`;
 
     const metricRows = buildMetricSummaryRows(latest);
     elements.scoreSummaryList.innerHTML = metricRows.map((metric) => `
@@ -738,7 +764,7 @@
     const development = performance.slice().sort((a, b) => a.score - b.score).slice(0, 3);
     elements.strengthsList.innerHTML = strengths.map((item) => `<li>${escapeHtml(item.label)} is trending strongest right now at ${formatScore(item.score)}.</li>`).join("");
     elements.developmentList.innerHTML = development.map((item) => `<li>${escapeHtml(item.label)} has the clearest room to improve next.</li>`).join("");
-    renderTierTrack(Number(latest.total_score || 0));
+    renderTierTrack(Number(latest.dashboard_total_score || 0));
   }
 
   function handleDownloadScorecard() {
@@ -791,12 +817,12 @@
   function renderTierTrack(score) {
     const tiers = [
       { label: "Foundation Phase", min: 0, icon: "icon-tier-foundation", iconClass: "" },
-      { label: "Developmental", min: 40, icon: "icon-tier-developmental", iconClass: "" },
-      { label: "Competitive", min: 70, icon: "icon-tier-competitive", iconClass: "tier-track-icon--outline" },
-      { label: "Elite", min: 95, icon: "icon-tier-elite", iconClass: "" },
-      { label: "Pro Level", min: 120, icon: "icon-tier-pro", iconClass: "tier-track-icon--outline" }
+      { label: "Developmental", min: 27, icon: "icon-tier-developmental", iconClass: "" },
+      { label: "Competitive", min: 47, icon: "icon-tier-competitive", iconClass: "tier-track-icon--outline" },
+      { label: "Elite", min: 63, icon: "icon-tier-elite", iconClass: "" },
+      { label: "Pro Level", min: 80, icon: "icon-tier-pro", iconClass: "tier-track-icon--outline" }
     ];
-    const currentTier = getTierInfo(score).tier;
+    const currentTier = getDashboardTierInfo(score).tier;
     elements.tierTrack.innerHTML = tiers.map((tier) => `
       <article class="tier-track-card ${tier.label === currentTier ? "is-current" : ""}">
         <svg class="tier-track-icon ${tier.iconClass}" viewBox="0 0 24 24"><use href="#${tier.icon}"></use></svg>
@@ -807,8 +833,8 @@
     `).join("");
     const nextTier = tiers.find((tier) => tier.min > score);
     elements.tierTrackCopy.textContent = nextTier
-      ? `Current FASST score: ${formatScore(score)}/150. ${formatScore(nextTier.min - score)} points needed to reach ${nextTier.label}.`
-      : `Current FASST score: ${formatScore(score)}/150. You are already in the top FASST tier.`;
+      ? `Current FASST score: ${formatScore(score)}/${DASHBOARD_TOTAL_MAX_SCORE}. ${formatScore(nextTier.min - score)} points needed to reach ${nextTier.label}.`
+      : `Current FASST score: ${formatScore(score)}/${DASHBOARD_TOTAL_MAX_SCORE}. You are already in the top FASST tier.`;
   }
 
   function renderProgressTab() {
@@ -826,8 +852,8 @@
     elements.progressSummary.innerHTML = comparisonResult ? `
       <p class="data-status">Comparing your latest saved result from ${formatDate(latest.date)} against your ${comparisonLabel} from ${formatDate(comparisonResult.date)}.</p>
       <div class="progress-summary-row">
-        <div class="progress-summary-label"><span>Total Score Change</span><strong>${signedScore(Number(latest.total_score || 0) - Number(comparisonResult.total_score || 0))}</strong></div>
-        <div class="progress-bar-track"><div class="progress-bar-fill" style="width:${Math.min(100, Math.abs(Number(latest.total_score || 0) - Number(comparisonResult.total_score || 0)) * 4)}%"></div></div>
+        <div class="progress-summary-label"><span>Total Score Change</span><strong>${signedScore(Number(latest.dashboard_total_score || 0) - Number(comparisonResult.dashboard_total_score || 0))}</strong></div>
+        <div class="progress-bar-track"><div class="progress-bar-fill" style="width:${Math.min(100, Math.abs(Number(latest.dashboard_total_score || 0) - Number(comparisonResult.dashboard_total_score || 0)) * 5)}%"></div></div>
       </div>
       ${deltas.map((delta) => `
         <div class="progress-summary-row">
@@ -842,12 +868,12 @@
         <div class="history-head">
           <strong>${formatDateTimeET(result.date)}</strong>
           <div class="history-actions">
-            <span>${formatScore(result.total_score)} / 150</span>
+            <span>${formatScore(result.dashboard_total_score)} / ${DASHBOARD_TOTAL_MAX_SCORE}</span>
             <button type="button" class="delete-button" data-delete-result="${escapeHtml(result.result_id || result.id || "")}">Delete</button>
           </div>
         </div>
         <div class="history-meta">
-          <span>${escapeHtml(result.tier || "Foundation Phase")}</span>
+          <span>${escapeHtml(result.dashboard_tier || "Foundation Phase")}</span>
           <span>${escapeHtml(formatGender(result.gender))}</span>
           <span>${escapeHtml(formatGrade(result.grade))}</span>
         </div>
@@ -864,21 +890,21 @@
         <article class="leaderboard-card">
           <div class="leaderboard-card-top">
             <span class="leaderboard-rank ${rank <= 3 ? `leaderboard-rank--${rank}` : ""}">#${rank}</span>
-            <div class="leaderboard-score"><strong>${Math.round(Number(row.total_score || 0))}</strong><span>score</span></div>
+            <div class="leaderboard-score"><strong>${Math.round(Number(row.dashboard_total_score || 0))}</strong><span>score</span></div>
           </div>
           <div>
             <div class="leaderboard-card-name-row">
               <div class="leaderboard-card-name">${escapeHtml(row.athlete_name || "Athlete")}</div>
               ${renderFasstAthleteBadge(row)}
             </div>
-            <p class="leaderboard-card-copy">${escapeHtml(row.projection || "FASST athlete")}</p>
+            <p class="leaderboard-card-copy">${escapeHtml(row.dashboard_projection || row.projection || "FASST athlete")}</p>
           </div>
           <div class="leaderboard-card-tags">
             <span class="leaderboard-tag">${escapeHtml(formatGrade(row.grade))}</span>
             <span class="leaderboard-tag">${escapeHtml(formatZipTag(row.zip))}</span>
             <span class="leaderboard-tag">${escapeHtml(formatGender(row.gender))}</span>
           </div>
-          <div class="leaderboard-tier-bar" style="background:${tierColor(row.tier)}">${escapeHtml(row.tier || "Foundation Phase")}</div>
+          <div class="leaderboard-tier-bar" style="background:${tierColor(row.dashboard_tier)}">${escapeHtml(row.dashboard_tier || "Foundation Phase")}</div>
         </article>
       `;
     }).join("");
@@ -889,9 +915,9 @@
         <td><span class="leaderboard-table-name">${escapeHtml(row.athlete_name || "Athlete")}</span>${renderFasstAthleteBadge(row)}</td>
         <td>${escapeHtml(formatGender(row.gender))}</td>
         <td>${escapeHtml(formatGrade(row.grade))}</td>
-        <td>${formatScore(row.total_score)}</td>
-        <td>${escapeHtml(row.tier || "Foundation Phase")}</td>
-        <td>${escapeHtml(row.projection || "")}</td>
+        <td>${formatScore(row.dashboard_total_score)}</td>
+        <td>${escapeHtml(row.dashboard_tier || "Foundation Phase")}</td>
+        <td>${escapeHtml(row.dashboard_projection || row.projection || "")}</td>
       </tr>
     `).join("");
   }
@@ -1017,11 +1043,11 @@
     normalizeResults(history).forEach((row) => {
       const userId = String(row.user_id || row.userId || row.athlete_name || row.result_id);
       const existing = bestByUser.get(userId);
-      if (!existing || Number(row.total_score || 0) > Number(existing.total_score || 0)) {
+      if (!existing || Number(row.dashboard_total_score || 0) > Number(existing.dashboard_total_score || 0)) {
         bestByUser.set(userId, row);
       }
     });
-    return Array.from(bestByUser.values()).sort((a, b) => Number(b.total_score || 0) - Number(a.total_score || 0));
+    return Array.from(bestByUser.values()).sort((a, b) => Number(b.dashboard_total_score || 0) - Number(a.dashboard_total_score || 0));
   }
 
   async function deleteSavedResult(resultId) {
@@ -1079,10 +1105,15 @@
           thresholds: []
         });
       }
-      state.scoringTables.get(key).thresholds.push({
+      const table = state.scoringTables.get(key);
+      const thresholdOrder = Number(row.threshold_order);
+      if (table.thresholds.some((threshold) => Number(threshold.order) === thresholdOrder)) {
+        return;
+      }
+      table.thresholds.push({
         cutoff: Number(row.cutoff_value),
         points: Number(row.awarded_points),
-        order: Number(row.threshold_order)
+        order: thresholdOrder
       });
     });
   }
@@ -1635,30 +1666,33 @@
   }
 
   function normalizeResults(results) {
-    return results.map((row) => ({
-      ...row,
-      result_id: row.result_id || row.id || "",
-      athlete_name: row.athlete_name || [row.first_name || row.firstName || "", row.last_name || row.lastName || ""].filter(Boolean).join(" "),
-      total_score: Number(row.total_score || 0),
-      bodyweight: readNumber(row.bodyweight),
-      forty: readNumber(firstDefined(row.forty, row.forty_yard_dash, row["40_yard_dash"])),
-      broad: readNumber(firstDefined(row.broad, row.broad_jump)),
-      cmj: readNumber(firstDefined(row.cmj, row.cmj_jump_height)),
-      rsi: readNumber(firstDefined(row.rsi, row.cmj_rsi_mod)),
-      pro_agility: readNumber(firstDefined(row.pro_agility, row.pro_agility_5_10_5, row.pro_agility_5_10_5_sec, row.pro_agility__5_10_5)),
-      cone: readNumber(firstDefined(row.cone, row["3_cone_l_drill"])),
-      trap_bar_1rm: readNumber(row.trap_bar_1rm),
-      trap_relative: readNumber(firstDefined(row.trap_relative, row.trap_bar_relative)),
-      pull_ups: readNumber(row.pull_ups),
-      forty_points: readNumber(firstDefined(row.forty_points, row.forty_yard_dash_points, row["40_yard_dash_points"])) || 0,
-      broad_points: readNumber(firstDefined(row.broad_points, row.broad_jump_points)) || 0,
-      cmj_points: readNumber(firstDefined(row.cmj_points, row.cmj_jump_height_points)) || 0,
-      rsi_points: readNumber(firstDefined(row.rsi_points, row.cmj_rsi_mod_points)) || 0,
-      pro_points: readNumber(firstDefined(row.pro_points, row.pro_agility_points, row["pro_agility_points"])) || 0,
-      cone_points: readNumber(firstDefined(row.cone_points, row["3_cone_l_drill_points"])) || 0,
-      trap_points: readNumber(firstDefined(row.trap_points, row.trap_relative_points, row.trap_bar_relative_points, row.trap_bar_1rm_points)) || 0,
-      pull_points: readNumber(firstDefined(row.pull_points, row.pull_ups_points)) || 0
-    })).sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime());
+    return results.map((row) => {
+      const normalized = {
+        ...row,
+        result_id: row.result_id || row.id || "",
+        athlete_name: row.athlete_name || [row.first_name || row.firstName || "", row.last_name || row.lastName || ""].filter(Boolean).join(" "),
+        total_score: Number(row.total_score || 0),
+        bodyweight: readNumber(row.bodyweight),
+        forty: readNumber(firstDefined(row.forty, row.forty_yard_dash, row["40_yard_dash"])),
+        broad: readNumber(firstDefined(row.broad, row.broad_jump)),
+        cmj: readNumber(firstDefined(row.cmj, row.cmj_jump_height)),
+        rsi: readNumber(firstDefined(row.rsi, row.cmj_rsi_mod)),
+        pro_agility: readNumber(firstDefined(row.pro_agility, row.pro_agility_5_10_5, row.pro_agility_5_10_5_sec, row.pro_agility__5_10_5)),
+        cone: readNumber(firstDefined(row.cone, row["3_cone_l_drill"])),
+        trap_bar_1rm: readNumber(row.trap_bar_1rm),
+        trap_relative: readNumber(firstDefined(row.trap_relative, row.trap_bar_relative)),
+        pull_ups: readNumber(row.pull_ups),
+        forty_points: readNumber(firstDefined(row.forty_points, row.forty_yard_dash_points, row["40_yard_dash_points"])) || 0,
+        broad_points: readNumber(firstDefined(row.broad_points, row.broad_jump_points)) || 0,
+        cmj_points: readNumber(firstDefined(row.cmj_points, row.cmj_jump_height_points)) || 0,
+        rsi_points: readNumber(firstDefined(row.rsi_points, row.cmj_rsi_mod_points)) || 0,
+        pro_points: readNumber(firstDefined(row.pro_points, row.pro_agility_points, row["pro_agility_points"])) || 0,
+        cone_points: readNumber(firstDefined(row.cone_points, row["3_cone_l_drill_points"])) || 0,
+        trap_points: readNumber(firstDefined(row.trap_points, row.trap_relative_points, row.trap_bar_relative_points, row.trap_bar_1rm_points)) || 0,
+        pull_points: readNumber(firstDefined(row.pull_points, row.pull_ups_points)) || 0
+      };
+      return attachDashboardSummary(normalized);
+    }).sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime());
   }
 
   function firstDefined(...values) {
@@ -1674,45 +1708,90 @@
     return state.athleteResults.slice().sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime());
   }
 
+  function attachDashboardSummary(result) {
+    const dashboardPoints = getDashboardMetricPoints(result);
+    const dashboardTotalScore = DASHBOARD_METRIC_ORDER.reduce((sum, metricKey) => sum + Number(dashboardPoints[metricKey] || 0), 0);
+    const dashboardTier = getDashboardTierInfo(dashboardTotalScore);
+
+    return {
+      ...result,
+      dashboard_points: dashboardPoints,
+      dashboard_total_score: dashboardTotalScore,
+      dashboard_tier: dashboardTier.tier,
+      dashboard_projection: dashboardTier.projection
+    };
+  }
+
+  function getDashboardMetricPoints(result) {
+    const fallbackPoints = {
+      forty: result.forty_points || 0,
+      broad: result.broad_points || 0,
+      cmj: result.cmj_points || 0,
+      rsi: result.rsi_points || 0,
+      pro: result.pro_points || 0,
+      cone: result.cone_points || 0
+    };
+
+    const gender = String(result.gender || "").trim().toLowerCase();
+    const grade = String(result.grade || "").trim();
+    if (!gender || !grade || state.scoringTables.size === 0) {
+      return fallbackPoints;
+    }
+
+    const metricValues = {
+      forty: getMetricValue(result, "forty"),
+      broad: result.broad,
+      cmj: result.cmj,
+      rsi: result.rsi,
+      pro: result.pro_agility,
+      cone: result.cone
+    };
+
+    const points = {};
+    DASHBOARD_METRIC_ORDER.forEach((metricKey) => {
+      const table = state.scoringTables.get(`${gender}|${grade}|${metricKey}`);
+      points[metricKey] = table ? scoreMetric(metricValues[metricKey], table) : fallbackPoints[metricKey];
+    });
+
+    return points;
+  }
+
   function buildMetricSummaryRows(result) {
     return [
-      { label: "40-Yard Dash", value: formatMetricValue(getMetricValue(result, "forty"), "sec"), maxPoints: 30 },
-      { label: "Broad Jump", value: formatMetricValue(result.broad, "in"), maxPoints: 15 },
-      { label: "CMJ Jump Height", value: formatMetricValue(result.cmj, "in"), maxPoints: 25 },
-      { label: "CMJ RSI-Mod", value: formatMetricValue(result.rsi), maxPoints: 15 },
-      { label: "Pro Agility 5-10-5", value: formatMetricValue(result.pro_agility, "sec"), maxPoints: 20 },
-      { label: "3-Cone L-Drill", value: formatMetricValue(result.cone, "sec"), maxPoints: 20 },
-      { label: "Trap Bar 1RM", value: formatMetricValue(result.trap_bar_1rm, "lbs"), maxPoints: 15 },
-      { label: "Pull-Ups", value: formatMetricValue(result.pull_ups, "reps"), maxPoints: 10 }
+      { label: DASHBOARD_METRIC_LABELS.forty, value: formatMetricValue(getMetricValue(result, "forty"), "sec"), maxPoints: DASHBOARD_METRIC_MAX_POINTS.forty },
+      { label: DASHBOARD_METRIC_LABELS.broad, value: formatMetricValue(result.broad, "in"), maxPoints: DASHBOARD_METRIC_MAX_POINTS.broad },
+      { label: DASHBOARD_METRIC_LABELS.cmj, value: formatMetricValue(result.cmj, "in"), maxPoints: DASHBOARD_METRIC_MAX_POINTS.cmj },
+      { label: DASHBOARD_METRIC_LABELS.rsi, value: formatMetricValue(result.rsi), maxPoints: DASHBOARD_METRIC_MAX_POINTS.rsi },
+      { label: DASHBOARD_METRIC_LABELS.pro, value: formatMetricValue(result.pro_agility, "sec"), maxPoints: DASHBOARD_METRIC_MAX_POINTS.pro },
+      { label: DASHBOARD_METRIC_LABELS.cone, value: formatMetricValue(result.cone, "sec"), maxPoints: DASHBOARD_METRIC_MAX_POINTS.cone }
     ];
   }
 
   function buildPerformanceSnapshot(result) {
-    const points = getDerivedMetricPoints(result);
-    return [
-      { label: "Speed", score: percentage(points.forty, 30) },
-      { label: "Agility", score: average([percentage(points.pro, 20), percentage(points.cone, 20)]) },
-      { label: "Power", score: average([percentage(points.broad, 15), percentage(points.cmj, 25)]) },
-      { label: "Strength", score: percentage(points.trap, 15) },
-      { label: "Conditioning", score: percentage(points.pull, 10) },
-      { label: "Reactive Power", score: percentage(points.rsi, 15) }
-    ];
+    const points = result.dashboard_points || getDashboardMetricPoints(result);
+    return DASHBOARD_METRIC_ORDER.map((metricKey) => ({
+      label: DASHBOARD_METRIC_LABELS[metricKey],
+      score: percentage(points[metricKey], DASHBOARD_METRIC_MAX_POINTS[metricKey])
+    }));
   }
 
   function buildProgressDeltas(latest, previous) {
     return [
-      buildDelta("40-Yard Dash", Number(previous.forty || 0) - Number(latest.forty || 0), true),
-      buildDelta("Broad Jump", Number(latest.broad || 0) - Number(previous.broad || 0)),
-      buildDelta("CMJ Jump Height", Number(latest.cmj || 0) - Number(previous.cmj || 0)),
-      buildDelta("Pull-Ups", Number(latest.pull_ups || 0) - Number(previous.pull_ups || 0))
+      buildDelta(DASHBOARD_METRIC_LABELS.forty, Number(previous.forty || 0) - Number(latest.forty || 0), { unit: " sec", scale: 140 }),
+      buildDelta(DASHBOARD_METRIC_LABELS.broad, Number(latest.broad || 0) - Number(previous.broad || 0), { unit: " in", scale: 12 }),
+      buildDelta(DASHBOARD_METRIC_LABELS.cmj, Number(latest.cmj || 0) - Number(previous.cmj || 0), { unit: " in", scale: 12 }),
+      buildDelta(DASHBOARD_METRIC_LABELS.rsi, Number(latest.rsi || 0) - Number(previous.rsi || 0), { scale: 220 }),
+      buildDelta(DASHBOARD_METRIC_LABELS.pro, Number(previous.pro_agility || 0) - Number(latest.pro_agility || 0), { unit: " sec", scale: 140 }),
+      buildDelta(DASHBOARD_METRIC_LABELS.cone, Number(previous.cone || 0) - Number(latest.cone || 0), { unit: " sec", scale: 140 })
     ];
   }
 
-  function buildDelta(label, rawDelta, isSeconds) {
-    const magnitude = Math.min(100, Math.abs(rawDelta) * (isSeconds ? 140 : 12));
+  function buildDelta(label, rawDelta, options) {
+    const settings = options || {};
+    const magnitude = Math.min(100, Math.abs(rawDelta) * Number(settings.scale || 12));
     return {
       label,
-      value: `${rawDelta > 0 ? "+" : rawDelta < 0 ? "-" : ""}${formatDeltaNumber(Math.abs(rawDelta))}${isSeconds ? " sec" : ""}`,
+      value: `${rawDelta > 0 ? "+" : rawDelta < 0 ? "-" : ""}${formatDeltaNumber(Math.abs(rawDelta))}${settings.unit || ""}`,
       magnitude
     };
   }
@@ -1728,13 +1807,17 @@
       .filter((row) => !search || String(row.athlete_name || "").toLowerCase().includes(search))
       .filter((row) => !gender || String(row.gender) === gender)
       .filter((row) => !grade || String(row.grade) === grade)
-      .filter((row) => minScore === null || Number(row.total_score || 0) >= minScore)
-      .filter((row) => maxScore === null || Number(row.total_score || 0) <= maxScore)
-      .sort((a, b) => Number(b.total_score || 0) - Number(a.total_score || 0));
+      .filter((row) => minScore === null || Number(row.dashboard_total_score || 0) >= minScore)
+      .filter((row) => maxScore === null || Number(row.dashboard_total_score || 0) <= maxScore)
+      .sort((a, b) => Number(b.dashboard_total_score || 0) - Number(a.dashboard_total_score || 0));
   }
 
   function getTierInfo(score) {
     return CONFIG.scoreTiers.find((tier) => score >= tier.minScore) || CONFIG.scoreTiers[CONFIG.scoreTiers.length - 1];
+  }
+
+  function getDashboardTierInfo(score) {
+    return DASHBOARD_SCORE_TIERS.find((tier) => score >= tier.minScore) || DASHBOARD_SCORE_TIERS[DASHBOARD_SCORE_TIERS.length - 1];
   }
 
   function getDerivedMetricPoints(result) {
@@ -1920,12 +2003,12 @@
     .scorebox { text-align: right; }
     .scorebox strong { display: block; font-size: 72px; line-height: 0.9; }
     .scorebox span { color: rgba(255,255,255,0.72); font-size: 16px; }
-    .pill { display: inline-flex; margin-top: 12px; padding: 10px 16px; border-radius: 999px; color: #fff; background: ${tierColor(data.latest.tier)}; font-weight: 700; }
+    .pill { display: inline-flex; margin-top: 12px; padding: 10px 16px; border-radius: 999px; color: #fff; background: ${tierColor(data.latest.dashboard_tier)}; font-weight: 700; }
     .range { margin-top: 22px; display: grid; gap: 10px; }
     .range-line { display: flex; gap: 12px; color: rgba(255,255,255,0.86); }
     .scale { position: relative; display: grid; grid-template-columns: repeat(5, 1fr); height: 18px; border-radius: 999px; overflow: hidden; }
     .seg1 { background: #9da4bb; } .seg2 { background: #ff8a00; } .seg3 { background: #6bb691; } .seg4 { background: #5a91e8; } .seg5 { background: #f2b400; }
-    .marker { position: absolute; top: 50%; left: ${Math.max(0, Math.min(100, (Number(data.latest.total_score || 0) / 150) * 100))}%; width: 14px; height: 14px; border: 3px solid #0d1528; border-radius: 999px; background: #fff; transform: translate(-50%, -50%); }
+    .marker { position: absolute; top: 50%; left: ${Math.max(0, Math.min(100, (Number(data.latest.dashboard_total_score || 0) / DASHBOARD_TOTAL_MAX_SCORE) * 100))}%; width: 14px; height: 14px; border: 3px solid #0d1528; border-radius: 999px; background: #fff; transform: translate(-50%, -50%); }
     .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
     .card { padding: 22px; border: 1px solid #d8e2ee; border-radius: 22px; background: #fff; break-inside: avoid; box-shadow: none; }
     .card h2 { margin: 0 0 14px; font-size: 24px; }
@@ -1961,13 +2044,13 @@
           <p class="meta">${escapeHtml(formatGender(data.latest.gender))} • ${escapeHtml(formatGrade(data.latest.grade))} • Saved ${escapeHtml(formatDateTimeET(data.latest.date))}</p>
         </div>
         <div class="scorebox">
-          <strong>${Math.round(Number(data.latest.total_score || 0))}</strong>
-          <span>Overall score (/ 150)</span>
-          <div class="pill">${escapeHtml(data.latest.tier || "Foundation Phase")}</div>
+          <strong>${Math.round(Number(data.latest.dashboard_total_score || 0))}</strong>
+          <span>Overall score (/ ${DASHBOARD_TOTAL_MAX_SCORE})</span>
+          <div class="pill">${escapeHtml(data.latest.dashboard_tier || "Foundation Phase")}</div>
         </div>
       </div>
       <div class="range">
-        <div class="range-line"><span>FASST Score: ${formatScore(data.latest.total_score)} / 150</span><strong>${escapeHtml(data.latest.tier || "Foundation Phase")}</strong></div>
+        <div class="range-line"><span>FASST Score: ${formatScore(data.latest.dashboard_total_score)} / ${DASHBOARD_TOTAL_MAX_SCORE}</span><strong>${escapeHtml(data.latest.dashboard_tier || "Foundation Phase")}</strong></div>
         <div class="scale">
           <div class="marker"></div>
           <div class="seg1"></div><div class="seg2"></div><div class="seg3"></div><div class="seg4"></div><div class="seg5"></div>
