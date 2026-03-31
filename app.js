@@ -5,6 +5,7 @@
     apiBaseUrl: "",
     winchester: { lat: 39.1857, lon: -78.1633 },
     leadRadiusMiles: 25,
+    metricBaselineFloorRatio: 0.2,
     metricOrder: ["forty", "broad", "cmj", "rsi", "pro", "cone"],
     metricLabels: {
       forty: "40-Yard Dash",
@@ -27,7 +28,7 @@
       { minScore: 63, tier: "Elite", projection: "Strong NCAA Division I or Division II projection", summary: "This athlete is testing at a very competitive level and stands out in multiple categories." },
       { minScore: 47, tier: "Competitive", projection: "Division II, Division III, NAIA, or fast-rising varsity upside", summary: "This athlete has a solid testing base with clear upside and several college-relevant traits." },
       { minScore: 27, tier: "Developmental", projection: "Developmental varsity or college upside with growth", summary: "This athlete has a workable base with several measurable opportunities to improve." },
-      { minScore: 0, tier: "Foundation Phase", projection: "Needs physical development", summary: "This athlete is still building the performance foundation." }
+      { minScore: 0, tier: "Building Phase", projection: "Early-stage performance baseline with room to build", summary: "This athlete is establishing an honest starting point and clear areas to improve." }
     ],
     fasstFaviconUrl: "https://images.squarespace-cdn.com/content/v1/691bc0fb5f7ee703b6452720/2fa7f9ca-8d11-4c25-8924-e6e78e4ebbeb/favicon.ico?format=100w",
     momence: {
@@ -64,7 +65,7 @@
     { minScore: 63, tier: "Elite", projection: "Strong NCAA Division I or Division II projection" },
     { minScore: 47, tier: "Competitive", projection: "Division II, Division III, NAIA, or fast-rising varsity upside" },
     { minScore: 27, tier: "Developmental", projection: "Developmental varsity or college upside with growth" },
-    { minScore: 0, tier: "Foundation Phase", projection: "Needs physical development" }
+    { minScore: 0, tier: "Building Phase", projection: "Early-stage performance baseline with room to build" }
   ];
 
   const state = {
@@ -80,7 +81,7 @@
     leaderboardRows: [],
     dashboardTab: "score",
     leaderboardView: "cards",
-    progressComparisonMode: "previous"
+    progressComparisonMode: "baseline"
   };
 
   const elements = {
@@ -100,6 +101,7 @@
     athleteResultName: document.getElementById("athlete-result-name"),
     comparisonCopy: document.getElementById("comparison-copy"),
     breakdownList: document.getElementById("breakdown-list"),
+    metricTargetLabels: Array.from(document.querySelectorAll("[data-metric-target]")),
     gateModal: document.getElementById("gate-modal"),
     modalClose: document.getElementById("modal-close"),
     zipForm: document.getElementById("zip-form"),
@@ -137,12 +139,12 @@
     reportRangeLabel: document.getElementById("report-range-label"),
     reportRangeTier: document.getElementById("report-range-tier"),
     reportScaleMarker: document.getElementById("report-scale-marker"),
+    tierIconUse: document.getElementById("tier-icon-use"),
+    tierIconSvg: document.getElementById("tier-icon-svg"),
     scoreSummaryList: document.getElementById("score-summary-list"),
     performanceBars: document.getElementById("performance-bars"),
     strengthsList: document.getElementById("strengths-list"),
     developmentList: document.getElementById("development-list"),
-    tierTrack: document.getElementById("tier-track"),
-    tierTrackCopy: document.getElementById("tier-track-copy"),
     progressSummary: document.getElementById("progress-summary"),
     historyList: document.getElementById("history-list"),
     progressPreviousButton: document.getElementById("progress-previous-button"),
@@ -172,15 +174,18 @@
     updateCompletionStatus(readFormPayload());
     renderPreview(readFormPayload());
     renderDashboard();
+    setScoringLoadingState(true);
 
     try {
       const rows = await loadScoringRows();
       buildScoringTables(rows);
+      setScoringLoadingState(false);
       elements.dataStatus.textContent = "Scoring tables ready. Results are compared only against the selected grade and gender.";
       elements.submitButton.disabled = false;
       renderPreview(readFormPayload());
     } catch (error) {
       console.error(error);
+      setScoringLoadingState(false);
       elements.dataStatus.textContent = "Unable to load the scoring tables right now. Check the Google Sheet connection and try again.";
     }
 
@@ -234,6 +239,15 @@
     elements.leaderboardCardsButton.addEventListener("click", () => setLeaderboardView("cards"));
     elements.leaderboardTableButton.addEventListener("click", () => setLeaderboardView("table"));
     elements.historyList.addEventListener("click", handleHistoryListClick);
+  }
+
+  function setScoringLoadingState(isLoading) {
+    elements.dataStatus.classList.toggle("data-status--loading", isLoading);
+    elements.submitButton.disabled = isLoading;
+    elements.submitButton.textContent = isLoading ? "Loading Scores..." : "Submit Results";
+    if (isLoading) {
+      elements.dataStatus.textContent = "Loading scoring tables and preparing your benchmarks...";
+    }
   }
 
   function handleReset() {
@@ -553,7 +567,9 @@
         label: table.metricName || CONFIG.metricLabels[metricKey],
         hasValue: Number.isFinite(rawValue),
         points: scoreMetric(rawValue, table),
-        maxPoints: table.maxPoints
+        maxPoints: table.maxPoints,
+        nextBenchmark: Number.isFinite(rawValue) ? getNextBenchmark(metricKey, rawValue, table) : null,
+        maxBenchmark: getMaxBenchmark(metricKey, table)
       });
     });
 
@@ -566,7 +582,7 @@
       totalScore,
       tier: tierInfo.tier,
       projection: tierInfo.projection,
-      explanation: `${tierInfo.summary} It helps frame current athletic profile, but it does not guarantee recruiting outcomes, scholarship offers, or roster placement.`,
+      explanation: buildScoreExplanation(totalScore, tierInfo),
       errors
     };
   }
@@ -575,34 +591,66 @@
     if (!Number.isFinite(value)) {
       return 0;
     }
-    const thresholds = table.thresholds.slice().sort((a, b) => Number(a.order) - Number(b.order));
+    const minimumPoints = getMetricMinimumPoints(table);
+    const adjustedThresholds = getSortedThresholds(table).map((threshold) => ({
+      ...threshold,
+      points: Math.max(Number(threshold.points || 0), minimumPoints)
+    }));
+
     if (table.direction === "lower_is_better") {
-      const match = thresholds.find((threshold) => value <= threshold.cutoff);
-      return match ? match.points : 0;
+      if (value <= adjustedThresholds[0].cutoff) {
+        return adjustedThresholds[0].points;
+      }
+
+      for (let index = 0; index < adjustedThresholds.length - 1; index += 1) {
+        const better = adjustedThresholds[index];
+        const worse = adjustedThresholds[index + 1];
+        if (value <= worse.cutoff) {
+          return interpolatePoints(value, better, worse, true);
+        }
+      }
+
+      return minimumPoints;
     }
-    const match = thresholds.find((threshold) => value >= threshold.cutoff);
-    return match ? match.points : 0;
+
+    if (value >= adjustedThresholds[0].cutoff) {
+      return adjustedThresholds[0].points;
+    }
+
+    for (let index = 0; index < adjustedThresholds.length - 1; index += 1) {
+      const better = adjustedThresholds[index];
+      const worse = adjustedThresholds[index + 1];
+      if (value >= worse.cutoff) {
+        return interpolatePoints(value, better, worse, false);
+      }
+    }
+
+    return minimumPoints;
   }
 
   function renderPreview(payload) {
     const hasPeerGroup = payload.gender && payload.grade;
+    renderMetricBenchmarkTargets(payload);
     elements.athleteResultName.textContent = "Athlete";
     elements.comparisonCopy.textContent = hasPeerGroup ? buildComparisonCopy(payload) : "Compared against athletes in the selected peer group.";
 
     if (!hasPeerGroup || state.scoringTables.size === 0) {
-      updateSummaryCards({ totalScore: 0, tier: "Foundation Phase", projection: "Needs physical development" });
+      updateSummaryCards({ totalScore: 0, tier: "Building Phase", projection: "Early-stage performance baseline with room to build" });
+      elements.scoreExplainer.textContent = "This score helps establish a performance baseline against FASST benchmarks and is most useful when you track progress over time.";
       renderBreakdownPlaceholders();
       return;
     }
 
     const previewResult = calculateScore(payload);
     if (previewResult.errors.length > 0) {
-      updateSummaryCards({ totalScore: 0, tier: "Foundation Phase", projection: "Needs physical development" });
+      updateSummaryCards({ totalScore: 0, tier: "Building Phase", projection: "Early-stage performance baseline with room to build" });
+      elements.scoreExplainer.textContent = "This score helps establish a performance baseline against FASST benchmarks and is most useful when you track progress over time.";
       renderBreakdownPlaceholders();
       return;
     }
 
     updateSummaryCards(previewResult);
+    elements.scoreExplainer.textContent = previewResult.explanation;
     renderBreakdown(previewResult.scoreEntries, true);
   }
 
@@ -611,6 +659,7 @@
     elements.athleteResultName.textContent = "Athlete";
     elements.comparisonCopy.textContent = buildComparisonCopy(result.payload);
     elements.scoreExplainer.textContent = result.explanation;
+    renderMetricBenchmarkTargets(result.payload);
     renderBreakdown(result.scoreEntries, false);
   }
 
@@ -620,9 +669,23 @@
       const percentage = entry.maxPoints > 0 ? (entry.points / entry.maxPoints) * 100 : 0;
       const showDash = useDashesForZero && entry.points === 0 && entry.hasValue === false;
       const scoreLabel = showDash ? `- / ${entry.maxPoints}` : `${formatScore(entry.points)} / ${entry.maxPoints}`;
+      const benchmark = entry.nextBenchmark;
+      const maxBenchmark = entry.maxBenchmark;
+      const markerMarkup = benchmark
+        ? `<div class="breakdown-benchmark-marker" style="left:${benchmark.markerPercent}%"></div>`
+        : "";
+      const maxMarkerMarkup = maxBenchmark
+        ? `<div class="breakdown-max-marker" style="left:${maxBenchmark.markerPercent}%"></div>`
+        : "";
+      const benchmarkCopy = benchmark
+        ? `<div class="breakdown-benchmark-copy">${escapeHtml(benchmark.copy)}</div>`
+        : "";
+      const maxBenchmarkCopy = maxBenchmark
+        ? `<div class="breakdown-max-copy">${escapeHtml(maxBenchmark.copy)}</div>`
+        : "";
       const row = document.createElement("article");
       row.className = "breakdown-row";
-      row.innerHTML = `<div class="breakdown-header"><strong>${escapeHtml(entry.label)}</strong><div class="breakdown-score">${scoreLabel}</div></div><div class="breakdown-bar"><div class="breakdown-fill" style="width:${percentage}%"></div></div>`;
+      row.innerHTML = `<div class="breakdown-header"><strong>${escapeHtml(entry.label)}</strong><div class="breakdown-score">${scoreLabel}</div></div><div class="breakdown-bar"><div class="breakdown-fill" style="width:${percentage}%"></div>${markerMarkup}${maxMarkerMarkup}</div>${benchmarkCopy}${maxBenchmarkCopy}`;
       elements.breakdownList.appendChild(row);
     });
   }
@@ -632,14 +695,16 @@
       label: CONFIG.metricLabels[metricKey],
       hasValue: false,
       points: 0,
-      maxPoints: CONFIG.metricMaxPoints[metricKey]
+      maxPoints: CONFIG.metricMaxPoints[metricKey],
+      nextBenchmark: null,
+      maxBenchmark: null
     }));
     renderBreakdown(placeholders, true);
   }
 
   function renderEmptyState() {
-    elements.scoreExplainer.textContent = "This score is a performance benchmark. It does not guarantee recruiting outcomes, scholarship offers, or roster placement.";
-    updateSummaryCards({ totalScore: 0, tier: "Foundation Phase", projection: "Needs physical development" });
+    elements.scoreExplainer.textContent = "This score helps establish a performance baseline against FASST benchmarks and is most useful when you track progress over time.";
+    updateSummaryCards({ totalScore: 0, tier: "Building Phase", projection: "Early-stage performance baseline with room to build" });
     renderBreakdownPlaceholders();
   }
 
@@ -716,13 +781,13 @@
       elements.reportOverallScore.textContent = "0";
       elements.reportTierPill.textContent = "No scores yet";
       elements.reportRangeLabel.textContent = `FASST Score: 0 / ${DASHBOARD_TOTAL_MAX_SCORE}`;
-      elements.reportRangeTier.textContent = "Foundation Phase";
+      elements.reportRangeTier.textContent = "Building Phase";
       elements.reportScaleMarker.style.left = "0%";
       elements.scoreSummaryList.innerHTML = `<p class="data-status">No saved combine submission yet.</p>`;
       elements.performanceBars.innerHTML = `<p class="data-status">Performance visuals will appear after your first saved score.</p>`;
       elements.strengthsList.innerHTML = `<li>Submit a score to identify top categories.</li>`;
       elements.developmentList.innerHTML = `<li>Submit a score to surface development areas.</li>`;
-      renderTierTrack(0);
+      updateLiveTierIcon("Building Phase");
       return;
     }
 
@@ -730,11 +795,11 @@
 
     const athleteName = latest.athlete_name || [state.currentUser.firstName, state.currentUser.lastName].filter(Boolean).join(" ") || "Athlete";
     elements.reportAthleteName.textContent = athleteName;
-    elements.reportAthleteMeta.textContent = `${formatGender(latest.gender)} • ${formatGrade(latest.grade)} • Latest saved ${formatDate(latest.date)}`;
+    elements.reportAthleteMeta.innerHTML = `<span class="report-meta-primary">Projection: ${escapeHtml(latest.dashboard_projection || latest.projection || "Projection pending")}</span><span class="report-meta-secondary">Latest saved ${escapeHtml(formatDate(latest.date))}</span>`;
     elements.reportOverallScore.textContent = Math.round(Number(latest.dashboard_total_score || 0));
-    elements.reportTierPill.textContent = latest.dashboard_tier || "Foundation Phase";
+      elements.reportTierPill.textContent = latest.dashboard_tier || "Building Phase";
     elements.reportRangeLabel.textContent = `FASST Score: ${formatScore(latest.dashboard_total_score)} / ${DASHBOARD_TOTAL_MAX_SCORE}`;
-    elements.reportRangeTier.textContent = latest.dashboard_tier || "Foundation Phase";
+    elements.reportRangeTier.textContent = latest.dashboard_tier || "Building Phase";
     elements.reportScaleMarker.style.left = `${Math.max(0, Math.min(100, (Number(latest.dashboard_total_score || 0) / DASHBOARD_TOTAL_MAX_SCORE) * 100))}%`;
 
     const metricRows = buildMetricSummaryRows(latest);
@@ -749,15 +814,15 @@
     elements.performanceBars.innerHTML = performance.map((item) => `
       <div class="performance-row">
         <div class="performance-row-label"><span>${escapeHtml(item.label)}</span><strong>${formatScore(item.score)}</strong></div>
-        <div class="performance-track"><div class="performance-bar" style="width:${item.score}%"></div></div>
+        <div class="performance-track"><div class="performance-bar" style="width:${item.score}%"></div>${item.benchmark ? `<div class="performance-benchmark-marker" style="left:${item.benchmark.markerPercent}%"></div>` : ""}</div>
+        ${item.benchmark ? `<div class="performance-benchmark-copy">${escapeHtml(item.benchmark.copy)}</div>` : ""}
       </div>
     `).join("");
 
-    const strengths = performance.slice().sort((a, b) => b.score - a.score).slice(0, 3);
-    const development = performance.slice().sort((a, b) => a.score - b.score).slice(0, 3);
-    elements.strengthsList.innerHTML = strengths.map((item) => `<li>${escapeHtml(item.label)} is trending strongest right now at ${formatScore(item.score)}.</li>`).join("");
-    elements.developmentList.innerHTML = development.map((item) => `<li>${escapeHtml(item.label)} has the clearest room to improve next.</li>`).join("");
-    renderTierTrack(Number(latest.dashboard_total_score || 0));
+    const summaryLists = buildCoachingSummaryLists(latest, performance);
+    elements.strengthsList.innerHTML = summaryLists.strengths.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
+    elements.developmentList.innerHTML = summaryLists.development.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
+    updateLiveTierIcon(latest.dashboard_tier || "Building Phase");
   }
 
   function handleDownloadScorecard() {
@@ -807,27 +872,15 @@
     }
   }
 
-  function renderTierTrack(score) {
-    const tiers = [
-      { label: "Foundation Phase", min: 0, icon: "icon-tier-foundation", iconClass: "" },
-      { label: "Developmental", min: 27, icon: "icon-tier-developmental", iconClass: "" },
-      { label: "Competitive", min: 47, icon: "icon-tier-competitive", iconClass: "tier-track-icon--outline" },
-      { label: "Elite", min: 63, icon: "icon-tier-elite", iconClass: "" },
-      { label: "Pro Level", min: 80, icon: "icon-tier-pro", iconClass: "tier-track-icon--outline" }
-    ];
-    const currentTier = getDashboardTierInfo(score).tier;
-    elements.tierTrack.innerHTML = tiers.map((tier) => `
-      <article class="tier-track-card ${tier.label === currentTier ? "is-current" : ""}">
-        <svg class="tier-track-icon ${tier.iconClass}" viewBox="0 0 24 24"><use href="#${tier.icon}"></use></svg>
-        <strong>${tier.label}</strong>
-        <span>${tier.min}+ pts</span>
-        ${tier.label === currentTier ? '<span class="current-pill">Current</span>' : ""}
-      </article>
-    `).join("");
-    const nextTier = tiers.find((tier) => tier.min > score);
-    elements.tierTrackCopy.textContent = nextTier
-      ? `Current FASST score: ${formatScore(score)}/${DASHBOARD_TOTAL_MAX_SCORE}. ${formatScore(nextTier.min - score)} points needed to reach ${nextTier.label}.`
-      : `Current FASST score: ${formatScore(score)}/${DASHBOARD_TOTAL_MAX_SCORE}. You are already in the top FASST tier.`;
+  function updateLiveTierIcon(tier) {
+    if (!elements.tierIconUse || !elements.tierIconSvg) {
+      return;
+    }
+    const tierIcon = getTierIconConfig(tier);
+    elements.tierIconSvg.setAttribute("viewBox", tierIcon.viewBox);
+    elements.tierIconSvg.classList.toggle("icon-svg--outline", tierIcon.isOutline);
+    elements.tierIconSvg.classList.toggle("icon-svg--fill", !tierIcon.isOutline);
+    elements.tierIconUse.setAttribute("href", `#${tierIcon.icon}`);
   }
 
   function renderProgressTab() {
@@ -841,17 +894,26 @@
     const latest = results[0];
     const comparisonResult = state.progressComparisonMode === "baseline" ? results[results.length - 1] : results[1];
     const comparisonLabel = state.progressComparisonMode === "baseline" ? "first saved baseline" : "previous saved result";
+    const comparisonNote = results.length === 2
+      ? `<p class="data-status">With only two saved submissions, \`Vs Previous\` and \`Vs First\` compare against the same baseline result.</p>`
+      : "";
     const deltas = comparisonResult ? buildProgressDeltas(latest, comparisonResult) : [];
+    const totalScoreDelta = Number(latest.dashboard_total_score || 0) - Number(comparisonResult?.dashboard_total_score || 0);
     elements.progressSummary.innerHTML = comparisonResult ? `
       <p class="data-status">Comparing your latest saved result from ${formatDate(latest.date)} against your ${comparisonLabel} from ${formatDate(comparisonResult.date)}.</p>
-      <div class="progress-summary-row">
-        <div class="progress-summary-label"><span>Total Score Change</span><strong>${signedScore(Number(latest.dashboard_total_score || 0) - Number(comparisonResult.dashboard_total_score || 0))}</strong></div>
-        <div class="progress-bar-track"><div class="progress-bar-fill" style="width:${Math.min(100, Math.abs(Number(latest.dashboard_total_score || 0) - Number(comparisonResult.dashboard_total_score || 0)) * 5)}%"></div></div>
+      ${comparisonNote}
+      <div class="progress-change-row progress-change-row--${progressTone(totalScoreDelta)}">
+        <div class="progress-change-label">
+          <span>Total Score Change</span>
+        </div>
+        <strong class="progress-change-value">${signedScore(totalScoreDelta)}</strong>
       </div>
       ${deltas.map((delta) => `
-        <div class="progress-summary-row">
-          <div class="progress-summary-label"><span>${escapeHtml(delta.label)}</span><strong>${escapeHtml(delta.value)}</strong></div>
-          <div class="progress-bar-track"><div class="progress-bar-fill" style="width:${Math.min(100, delta.magnitude)}%"></div></div>
+        <div class="progress-change-row progress-change-row--${delta.tone}">
+          <div class="progress-change-label">
+            <span>${escapeHtml(delta.label)}</span>
+          </div>
+          <strong class="progress-change-value">${escapeHtml(delta.value)}</strong>
         </div>
       `).join("")}
     ` : `<p class="data-status">One saved result so far. Save another submission to compare progress.</p>`;
@@ -866,7 +928,7 @@
           </div>
         </div>
         <div class="history-meta">
-          <span>${escapeHtml(result.dashboard_tier || "Foundation Phase")}</span>
+          <span>${escapeHtml(result.dashboard_tier || "Building Phase")}</span>
           <span>${escapeHtml(formatGender(result.gender))}</span>
           <span>${escapeHtml(formatGrade(result.grade))}</span>
         </div>
@@ -879,6 +941,8 @@
     elements.leaderboardCount.textContent = `${filteredRows.length} athletes ranked`;
     elements.leaderboardCards.innerHTML = filteredRows.map((row, index) => {
       const rank = index + 1;
+      const leaderboardProjection = getLeaderboardProjection(row);
+      const leaderboardName = formatLeaderboardName(row.athlete_name || "Athlete");
       return `
         <article class="leaderboard-card">
           <div class="leaderboard-card-top">
@@ -887,17 +951,16 @@
           </div>
           <div>
             <div class="leaderboard-card-name-row">
-              <div class="leaderboard-card-name">${escapeHtml(row.athlete_name || "Athlete")}</div>
+              <div class="leaderboard-card-name">${escapeHtml(leaderboardName)}</div>
               ${renderFasstAthleteBadge(row)}
             </div>
-            <p class="leaderboard-card-copy">${escapeHtml(row.dashboard_projection || row.projection || "FASST athlete")}</p>
+            <p class="leaderboard-card-copy">${escapeHtml(leaderboardProjection)}</p>
           </div>
           <div class="leaderboard-card-tags">
             <span class="leaderboard-tag">${escapeHtml(formatGrade(row.grade))}</span>
-            <span class="leaderboard-tag">${escapeHtml(formatZipTag(row.zip))}</span>
             <span class="leaderboard-tag">${escapeHtml(formatGender(row.gender))}</span>
           </div>
-          <div class="leaderboard-tier-bar" style="background:${tierColor(row.dashboard_tier)}">${escapeHtml(row.dashboard_tier || "Foundation Phase")}</div>
+          <div class="leaderboard-tier-bar" style="background:${tierColor(row.dashboard_tier)}">${escapeHtml(row.dashboard_tier || "Building Phase")}</div>
         </article>
       `;
     }).join("");
@@ -905,12 +968,12 @@
     elements.leaderboardTableBody.innerHTML = filteredRows.map((row, index) => `
       <tr>
         <td>#${index + 1}</td>
-        <td><span class="leaderboard-table-name">${escapeHtml(row.athlete_name || "Athlete")}</span>${renderFasstAthleteBadge(row)}</td>
+        <td><span class="leaderboard-table-name">${escapeHtml(formatLeaderboardName(row.athlete_name || "Athlete"))}</span>${renderFasstAthleteBadge(row)}</td>
         <td>${escapeHtml(formatGender(row.gender))}</td>
         <td>${escapeHtml(formatGrade(row.grade))}</td>
         <td>${formatScore(row.dashboard_total_score)}</td>
-        <td>${escapeHtml(row.dashboard_tier || "Foundation Phase")}</td>
-        <td>${escapeHtml(row.dashboard_projection || row.projection || "")}</td>
+        <td>${escapeHtml(row.dashboard_tier || "Building Phase")}</td>
+        <td>${escapeHtml(getLeaderboardProjection(row))}</td>
       </tr>
     `).join("");
   }
@@ -1511,6 +1574,156 @@
     return Number(value || 0).toFixed(1);
   }
 
+  function roundScore(value) {
+    return Math.round(Number(value || 0) * 10) / 10;
+  }
+
+  function getMetricMinimumPoints(table) {
+    return roundScore(Number(table.maxPoints || 0) * Number(CONFIG.metricBaselineFloorRatio || 0.2));
+  }
+
+  function getSortedThresholds(table) {
+    const thresholds = table.thresholds.slice();
+    if (table.direction === "lower_is_better") {
+      return thresholds.sort((a, b) => Number(a.cutoff) - Number(b.cutoff));
+    }
+    return thresholds.sort((a, b) => Number(b.cutoff) - Number(a.cutoff));
+  }
+
+  function interpolatePoints(value, better, worse, isLowerBetter) {
+    const startCutoff = Number(better.cutoff);
+    const endCutoff = Number(worse.cutoff);
+    const startPoints = Number(better.points);
+    const endPoints = Number(worse.points);
+    const denominator = Math.abs(endCutoff - startCutoff);
+
+    if (denominator === 0) {
+      return startPoints;
+    }
+
+    const progress = isLowerBetter
+      ? (value - startCutoff) / (endCutoff - startCutoff)
+      : (startCutoff - value) / (startCutoff - endCutoff);
+
+    return roundScore(startPoints + ((endPoints - startPoints) * Math.max(0, Math.min(1, progress))));
+  }
+
+  function getNextBenchmark(metricKey, value, table) {
+    if (!Number.isFinite(value)) {
+      return null;
+    }
+
+    const thresholds = getSortedThresholds(table).map((threshold) => ({
+      ...threshold,
+      points: Math.max(Number(threshold.points || 0), getMetricMinimumPoints(table))
+    }));
+    const nextThreshold = table.direction === "lower_is_better"
+      ? thresholds.slice().reverse().find((threshold) => value > Number(threshold.cutoff))
+      : thresholds.slice().reverse().find((threshold) => value < Number(threshold.cutoff));
+
+    if (!nextThreshold) {
+      return null;
+    }
+
+    const markerPercent = Math.max(0, Math.min(100, (Number(nextThreshold.points || 0) / Number(table.maxPoints || 1)) * 100));
+    const targetValue = formatMetricTargetValue(metricKey, nextThreshold.cutoff);
+    const deltaValue = formatMetricDelta(metricKey, value, nextThreshold.cutoff, table.direction);
+    const deltaMagnitude = Math.abs(Number(deltaValue));
+    const isClose = isCloseBenchmark(metricKey, deltaMagnitude);
+    const copy = table.direction === "lower_is_better"
+      ? `${targetValue} gets you to ${formatScore(nextThreshold.points)} pts (${deltaValue} faster).`
+      : `${targetValue} gets you to ${formatScore(nextThreshold.points)} pts (${deltaValue} more).`;
+    const shortCopy = table.direction === "lower_is_better"
+      ? `${targetValue} for ${formatScore(nextThreshold.points)} pts, just ${deltaValue} faster.`
+      : `${targetValue} for ${formatScore(nextThreshold.points)} pts, just ${deltaValue} more.`;
+
+    return {
+      markerPercent,
+      copy,
+      shortCopy,
+      deltaValue,
+      deltaMagnitude,
+      isClose
+    };
+  }
+
+  function getMaxBenchmark(metricKey, table) {
+    const thresholds = getSortedThresholds(table);
+    if (!thresholds.length) {
+      return null;
+    }
+    const topThreshold = thresholds[0];
+    return {
+      markerPercent: 100,
+      copy: `Max benchmark: ${formatMetricTargetValue(metricKey, topThreshold.cutoff)} for ${formatScore(topThreshold.points)} pts.`
+    };
+  }
+
+  function renderMetricBenchmarkTargets(payload) {
+    elements.metricTargetLabels.forEach((element) => {
+      const metricKey = element.dataset.metricTarget;
+      if (!metricKey) {
+        return;
+      }
+
+      const table = payload && payload.gender && payload.grade
+        ? state.scoringTables.get(`${payload.gender}|${payload.grade}|${metricKey}`)
+        : null;
+
+      if (!table) {
+        element.textContent = `Max ${CONFIG.metricMaxPoints[metricKey]} pts`;
+        return;
+      }
+
+      const maxBenchmark = getMaxBenchmark(metricKey, table);
+      element.textContent = maxBenchmark
+        ? `Max ${CONFIG.metricMaxPoints[metricKey]} pts at ${formatMetricTargetValue(metricKey, getSortedThresholds(table)[0].cutoff)}`
+        : `Max ${CONFIG.metricMaxPoints[metricKey]} pts`;
+    });
+  }
+
+  function isCloseBenchmark(metricKey, deltaMagnitude) {
+    const closeThresholds = {
+      forty: 0.12,
+      broad: 6,
+      cmj: 3,
+      rsi: 0.06,
+      pro: 0.15,
+      cone: 0.2
+    };
+    return deltaMagnitude <= Number(closeThresholds[metricKey] || 0);
+  }
+
+  function formatMetricTargetValue(metricKey, value) {
+    const numericValue = Number(value || 0);
+    if (metricKey === "broad" || metricKey === "cmj") {
+      return `${formatTrimmedNumber(numericValue)} in`;
+    }
+    if (metricKey === "forty" || metricKey === "pro" || metricKey === "cone") {
+      return `${formatTrimmedNumber(numericValue)} sec`;
+    }
+    return formatTrimmedNumber(numericValue);
+  }
+
+  function formatMetricDelta(metricKey, currentValue, targetValue, direction) {
+    const delta = direction === "lower_is_better"
+      ? Number(currentValue || 0) - Number(targetValue || 0)
+      : Number(targetValue || 0) - Number(currentValue || 0);
+    const precision = metricKey === "broad" || metricKey === "cmj" ? 1 : 2;
+    return Number(delta).toFixed(precision).replace(/\.0+$/, "").replace(/(\.\d*[1-9])0+$/, "$1");
+  }
+
+  function formatTrimmedNumber(value) {
+    return Number(value || 0).toFixed(2).replace(/\.0+$/, "").replace(/(\.\d*[1-9])0+$/, "$1");
+  }
+
+  function buildScoreExplanation(totalScore, tierInfo) {
+    const baselinePrefix = totalScore < 35
+      ? "Baseline established. These benchmarks are intentionally high, so early scores are best used as a starting point for progress."
+      : `${tierInfo.summary} This benchmark is most useful when you compare future training gains against today's baseline.`;
+    return `${baselinePrefix} It helps frame current athletic profile, but it does not guarantee recruiting outcomes, scholarship offers, or roster placement.`;
+  }
+
 
   function isTruthyFasstAthlete(value) {
     if (typeof value === "boolean") {
@@ -1788,29 +2001,33 @@
   function buildPerformanceSnapshot(result) {
     const points = result.dashboard_points || getDashboardMetricPoints(result);
     return DASHBOARD_METRIC_ORDER.map((metricKey) => ({
+      metricKey,
       label: DASHBOARD_METRIC_LABELS[metricKey],
-      score: percentage(points[metricKey], DASHBOARD_METRIC_MAX_POINTS[metricKey])
+      score: percentage(points[metricKey], DASHBOARD_METRIC_MAX_POINTS[metricKey]),
+      benchmark: buildSavedResultBenchmark(metricKey, result)
     }));
   }
 
   function buildProgressDeltas(latest, previous) {
     return [
-      buildDelta(DASHBOARD_METRIC_LABELS.forty, Number(previous.forty || 0) - Number(latest.forty || 0), { unit: " sec", scale: 140 }),
-      buildDelta(DASHBOARD_METRIC_LABELS.broad, Number(latest.broad || 0) - Number(previous.broad || 0), { unit: " in", scale: 12 }),
-      buildDelta(DASHBOARD_METRIC_LABELS.cmj, Number(latest.cmj || 0) - Number(previous.cmj || 0), { unit: " in", scale: 12 }),
-      buildDelta(DASHBOARD_METRIC_LABELS.rsi, Number(latest.rsi || 0) - Number(previous.rsi || 0), { scale: 220 }),
-      buildDelta(DASHBOARD_METRIC_LABELS.pro, Number(previous.pro_agility || 0) - Number(latest.pro_agility || 0), { unit: " sec", scale: 140 }),
-      buildDelta(DASHBOARD_METRIC_LABELS.cone, Number(previous.cone || 0) - Number(latest.cone || 0), { unit: " sec", scale: 140 })
+      buildDelta(DASHBOARD_METRIC_LABELS.forty, Number(previous.forty || 0) - Number(latest.forty || 0), { unit: " sec", directionLabels: { positive: "faster than last result", negative: "slower than last result", neutral: "matched last result" } }),
+      buildDelta(DASHBOARD_METRIC_LABELS.broad, Number(latest.broad || 0) - Number(previous.broad || 0), { unit: " in", scale: 12, directionLabels: { positive: "jumped farther than last result", negative: "jumped shorter than last result", neutral: "matched last result" } }),
+      buildDelta(DASHBOARD_METRIC_LABELS.cmj, Number(latest.cmj || 0) - Number(previous.cmj || 0), { unit: " in", scale: 12, directionLabels: { positive: "jumped higher than last result", negative: "jumped lower than last result", neutral: "matched last result" } }),
+      buildDelta(DASHBOARD_METRIC_LABELS.rsi, Number(latest.rsi || 0) - Number(previous.rsi || 0), { scale: 220, directionLabels: { positive: "improved from last result", negative: "down from last result", neutral: "matched last result" } }),
+      buildDelta(DASHBOARD_METRIC_LABELS.pro, Number(previous.pro_agility || 0) - Number(latest.pro_agility || 0), { unit: " sec", scale: 140, directionLabels: { positive: "faster than last result", negative: "slower than last result", neutral: "matched last result" } }),
+      buildDelta(DASHBOARD_METRIC_LABELS.cone, Number(previous.cone || 0) - Number(latest.cone || 0), { unit: " sec", scale: 140, directionLabels: { positive: "faster than last result", negative: "slower than last result", neutral: "matched last result" } })
     ];
   }
 
   function buildDelta(label, rawDelta, options) {
     const settings = options || {};
     const magnitude = Math.min(100, Math.abs(rawDelta) * Number(settings.scale || 12));
+    const tone = progressTone(rawDelta);
     return {
       label,
       value: `${rawDelta > 0 ? "+" : rawDelta < 0 ? "-" : ""}${formatDeltaNumber(Math.abs(rawDelta))}${settings.unit || ""}`,
-      magnitude
+      magnitude,
+      tone
     };
   }
 
@@ -1838,6 +2055,17 @@
     return DASHBOARD_SCORE_TIERS.find((tier) => score >= tier.minScore) || DASHBOARD_SCORE_TIERS[DASHBOARD_SCORE_TIERS.length - 1];
   }
 
+  function getTierIconConfig(tier) {
+    const iconMap = {
+      "Building Phase": { icon: "icon-tier-foundation", viewBox: "0 0 16 16", isOutline: false },
+      "Developmental": { icon: "icon-tier-developmental", viewBox: "0 0 24 24", isOutline: false },
+      "Competitive": { icon: "icon-tier-competitive", viewBox: "0 0 24 24", isOutline: true },
+      "Elite": { icon: "icon-tier-elite", viewBox: "0 0 14 14", isOutline: false },
+      "Pro Level": { icon: "icon-tier-pro", viewBox: "0 0 16 16", isOutline: true }
+    };
+    return iconMap[tier] || { icon: "icon-tier-foundation", viewBox: "0 0 16 16", isOutline: false };
+  }
+
   function getMetricValue(result, key) {
     if (key === "forty") {
       return firstDefined(result.forty, result["40_yard_dash"]);
@@ -1846,26 +2074,29 @@
   }
 
   function renderSavedResultPreview(result) {
+    const metricPoints = result.dashboard_points || getDashboardMetricPoints(result);
     const athleteName = result.athlete_name || [result.first_name || state.currentUser?.firstName || "", result.last_name || state.currentUser?.lastName || ""].filter(Boolean).join(" ") || "Athlete";
     const scoreEntries = DASHBOARD_METRIC_ORDER.map((metricKey) => ({
       metricKey,
       label: DASHBOARD_METRIC_LABELS[metricKey],
       hasValue: Number.isFinite(getMetricValueForPreview(result, metricKey)),
-      points: Number((result.dashboard_points || getDashboardMetricPoints(result))[metricKey] || 0),
-      maxPoints: DASHBOARD_METRIC_MAX_POINTS[metricKey]
+      points: Number(metricPoints[metricKey] || 0),
+      maxPoints: DASHBOARD_METRIC_MAX_POINTS[metricKey],
+      nextBenchmark: buildSavedResultBenchmark(metricKey, result),
+      maxBenchmark: buildSavedResultMaxBenchmark(metricKey, result)
     }));
 
     updateSummaryCards({
       totalScore: Number(result.dashboard_total_score || 0),
-      tier: result.dashboard_tier || "Foundation Phase",
-      projection: result.dashboard_projection || "Needs physical development"
+      tier: result.dashboard_tier || "Building Phase",
+      projection: result.dashboard_projection || "Early-stage performance baseline with room to build"
     });
     elements.athleteResultName.textContent = athleteName;
     elements.comparisonCopy.textContent = buildComparisonCopy({
       gender: result.gender,
       grade: result.grade
     });
-    elements.scoreExplainer.textContent = `Showing your latest saved result from ${formatDate(result.date)}. Update any number below to preview a new score.`;
+    elements.scoreExplainer.textContent = `Showing your latest saved baseline from ${formatDate(result.date)}. Update any number below to preview progress against the same FASST benchmarks.`;
     renderBreakdown(scoreEntries, false);
   }
 
@@ -1874,6 +2105,74 @@
       return result.pro_agility;
     }
     return getMetricValue(result, metricKey);
+  }
+
+  function buildSavedResultBenchmark(metricKey, result) {
+    const metricValue = getMetricValueForPreview(result, metricKey);
+    const gender = String(result.gender || "").trim().toLowerCase();
+    const grade = String(result.grade || "").trim();
+    const table = state.scoringTables.get(`${gender}|${grade}|${metricKey}`);
+    if (!table) {
+      return null;
+    }
+    return getNextBenchmark(metricKey, metricValue, table);
+  }
+
+  function buildSavedResultMaxBenchmark(metricKey, result) {
+    const gender = String(result.gender || "").trim().toLowerCase();
+    const grade = String(result.grade || "").trim();
+    const table = state.scoringTables.get(`${gender}|${grade}|${metricKey}`);
+    if (!table) {
+      return null;
+    }
+    return getMaxBenchmark(metricKey, table);
+  }
+
+  function buildCoachingSummaryLists(result, performance) {
+    const strengths = performance
+      .slice()
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 3)
+      .map((item) => {
+        const benchmark = buildSavedResultBenchmark(item.metricKey, result);
+        if (benchmark && benchmark.deltaValue && benchmark.isClose) {
+          return `${item.label} is a real strength right now, and you're almost there for the next benchmark: ${benchmark.shortCopy}`;
+        }
+        return `${item.label} is trending strongest right now at ${formatScore(item.score)}.`;
+      });
+
+    const developmentCandidates = DASHBOARD_METRIC_ORDER.map((metricKey) => {
+      const performanceItem = performance.find((item) => item.metricKey === metricKey);
+      return {
+        metricKey,
+        label: DASHBOARD_METRIC_LABELS[metricKey],
+        score: performanceItem ? performanceItem.score : 0,
+        benchmark: buildSavedResultBenchmark(metricKey, result)
+      };
+    });
+
+    const closeBenchmarks = developmentCandidates
+      .filter((item) => item.benchmark && item.benchmark.isClose)
+      .sort((a, b) => a.benchmark.deltaMagnitude - b.benchmark.deltaMagnitude)
+      .slice(0, 2)
+      .map((item) => `${item.label}: you're almost there. ${item.benchmark.shortCopy}`);
+
+    const growthAreas = developmentCandidates
+      .slice()
+      .sort((a, b) => a.score - b.score)
+      .filter((item) => !closeBenchmarks.some((copy) => copy.startsWith(`${item.label}:`)))
+      .slice(0, Math.max(1, 3 - closeBenchmarks.length))
+      .map((item) => {
+        if (item.benchmark) {
+          return `${item.label} has the clearest room to improve next. ${item.benchmark.shortCopy}`;
+        }
+        return `${item.label} has the clearest room to improve next.`;
+      });
+
+    return {
+      strengths,
+      development: [...closeBenchmarks, ...growthAreas].slice(0, 3)
+    };
   }
 
   function percentage(value, max) {
@@ -1917,6 +2216,16 @@
     }).format(date);
   }
 
+  function progressTone(value) {
+    if (value > 0) {
+      return "positive";
+    }
+    if (value < 0) {
+      return "negative";
+    }
+    return "neutral";
+  }
+
   function formatGender(value) {
     return value === "boys" ? "Male" : value === "girls" ? "Female" : "Athlete";
   }
@@ -1928,6 +2237,27 @@
   function formatZipTag(value) {
     const zip = String(value || "").trim();
     return zip ? zip.slice(0, 5) : "ZIP";
+  }
+
+  function getLeaderboardProjection(row) {
+    const tier = String(row.dashboard_tier || row.tier || "").trim();
+    if (tier === "Building Phase") {
+      return "";
+    }
+    return row.dashboard_projection || row.projection || "";
+  }
+
+  function formatLeaderboardName(value) {
+    const parts = String(value || "").trim().split(/\s+/).filter(Boolean);
+    if (parts.length === 0) {
+      return "Athlete";
+    }
+    if (parts.length === 1) {
+      return parts[0];
+    }
+    const firstName = parts[0];
+    const lastInitial = parts[parts.length - 1].charAt(0).toUpperCase();
+    return `${firstName} ${lastInitial}.`;
   }
 
   function tierColor(tier) {
@@ -2045,11 +2375,11 @@
         <div class="scorebox">
           <strong>${Math.round(Number(data.latest.dashboard_total_score || 0))}</strong>
           <span>Overall score (/ ${DASHBOARD_TOTAL_MAX_SCORE})</span>
-          <div class="pill">${escapeHtml(data.latest.dashboard_tier || "Foundation Phase")}</div>
+          <div class="pill">${escapeHtml(data.latest.dashboard_tier || "Building Phase")}</div>
         </div>
       </div>
       <div class="range">
-        <div class="range-line"><span>FASST Score: ${formatScore(data.latest.dashboard_total_score)} / ${DASHBOARD_TOTAL_MAX_SCORE}</span><strong>${escapeHtml(data.latest.dashboard_tier || "Foundation Phase")}</strong></div>
+        <div class="range-line"><span>FASST Score: ${formatScore(data.latest.dashboard_total_score)} / ${DASHBOARD_TOTAL_MAX_SCORE}</span><strong>${escapeHtml(data.latest.dashboard_tier || "Building Phase")}</strong></div>
         <div class="scale">
           <div class="marker"></div>
           <div class="seg1"></div><div class="seg2"></div><div class="seg3"></div><div class="seg4"></div><div class="seg5"></div>

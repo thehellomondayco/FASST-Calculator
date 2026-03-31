@@ -188,7 +188,7 @@
                     <strong>40-Yard Dash</strong>
                     <span>Lower is better</span>
                   </div>
-                  <small>Max 25 pts</small>
+                  <small data-metric-target="forty">Max 25 pts</small>
                 </div>
                 <div class="metric-input-wrap">
                   <input name="forty" type="number" min="0" step="0.01" inputmode="decimal" placeholder="e.g. 4.65" required>
@@ -202,7 +202,7 @@
                     <strong>Broad Jump</strong>
                     <span>Higher is better</span>
                   </div>
-                  <small>Max 10 pts</small>
+                  <small data-metric-target="broad">Max 10 pts</small>
                 </div>
                 <div class="metric-input-wrap">
                   <input name="broad" type="number" min="0" step="0.1" inputmode="decimal" placeholder="e.g. 96" required>
@@ -216,7 +216,7 @@
                     <strong>CMJ Jump Height</strong>
                     <span>Higher is better</span>
                   </div>
-                  <small>Max 15 pts</small>
+                  <small data-metric-target="cmj">Max 15 pts</small>
                 </div>
                 <div class="metric-input-wrap">
                   <input name="cmj" type="number" min="0" step="0.1" inputmode="decimal" placeholder="e.g. 24" required>
@@ -230,7 +230,7 @@
                     <strong>CMJ RSI-Mod</strong>
                     <span>Higher is better</span>
                   </div>
-                  <small>Max 10 pts</small>
+                  <small data-metric-target="rsi">Max 10 pts</small>
                 </div>
                 <div class="metric-input-wrap">
                   <input name="rsi" type="number" min="0" step="0.01" inputmode="decimal" placeholder="e.g. 0.28" required>
@@ -243,7 +243,7 @@
                     <strong>Pro Agility 5-10-5</strong>
                     <span>Lower is better</span>
                   </div>
-                  <small>Max 20 pts</small>
+                  <small data-metric-target="pro">Max 20 pts</small>
                 </div>
                 <div class="metric-input-wrap">
                   <input name="pro" type="number" min="0" step="0.01" inputmode="decimal" placeholder="e.g. 4.25" required>
@@ -257,7 +257,7 @@
                     <strong>3-Cone L-Drill</strong>
                     <span>Lower is better</span>
                   </div>
-                  <small>Max 20 pts</small>
+                  <small data-metric-target="cone">Max 20 pts</small>
                 </div>
                 <div class="metric-input-wrap">
                   <input name="cone" type="number" min="0" step="0.01" inputmode="decimal" placeholder="e.g. 7.0" required>
@@ -314,10 +314,10 @@
           <div class="result-meta-grid score-lock-target">
             <article class="result-meta-card">
               <div class="result-meta-top">
-                <div class="icon-badge"><svg class="icon-svg icon-svg--fill" viewBox="0 0 16 16"><use href="#icon-tier-bars"></use></svg></div>
+                <div class="icon-badge"><svg id="tier-icon-svg" class="icon-svg icon-svg--fill" viewBox="0 0 16 16"><use id="tier-icon-use" href="#icon-tier-foundation"></use></svg></div>
                 <div>
                   <span>Tier</span>
-                  <strong id="tier-name">Foundation Phase</strong>
+                  <strong id="tier-name">Building Phase</strong>
                 </div>
               </div>
             </article>
@@ -327,7 +327,7 @@
                 <div class="icon-badge"><svg class="icon-svg icon-svg--fill" viewBox="0 0 16 16"><use href="#icon-shield-check"></use></svg></div>
                 <div>
                   <span>Projection</span>
-                  <strong id="projection-name">Needs physical development</strong>
+                  <strong id="projection-name">Early-stage performance baseline with room to build</strong>
                 </div>
               </div>
             </article>
@@ -368,20 +368,6 @@
           </div>
         </section>
 
-        <section class="panel tier-panel">
-          <div class="section-head section-head--stack">
-            <div>
-              <h2>Tier Scale</h2>
-            </div>
-          </div>
-          <div class="tier-scale">
-            <div class="tier-scale-row tier-scale-row--gold"><strong>Pro Level</strong><span>80-100 pts</span></div>
-            <div class="tier-scale-row tier-scale-row--blue"><strong>Elite</strong><span>63-79 pts</span></div>
-            <div class="tier-scale-row tier-scale-row--green"><strong>Competitive</strong><span>47-62 pts</span></div>
-            <div class="tier-scale-row tier-scale-row--orange"><strong>Developmental</strong><span>27-46 pts</span></div>
-            <div class="tier-scale-row tier-scale-row--gray"><strong>Foundation Phase</strong><span>0-26 pts</span></div>
-          </div>
-        </section>
       </div>
     </section>
 
@@ -420,14 +406,14 @@
             <div class="report-score-block">
               <strong id="report-overall-score">0</strong>
               <span>Overall score (/ 100)</span>
-              <div class="report-pill" id="report-tier-pill">Foundation Phase</div>
+              <div class="report-pill" id="report-tier-pill">Building Phase</div>
             </div>
           </div>
 
           <div class="report-range">
             <div class="report-range-copy">
               <span id="report-range-label">FASST Score: 0 / 100</span>
-              <strong id="report-range-tier">Foundation Phase</strong>
+              <strong id="report-range-tier">Building Phase</strong>
             </div>
             <div class="report-scale">
               <div id="report-scale-marker" class="report-scale-marker"></div>
@@ -439,7 +425,7 @@
             </div>
             <div class="report-scale-labels">
               <span>0</span>
-              <span>Foundation</span>
+              <span>Building</span>
               <span>Developmental</span>
               <span>Competitive</span>
               <span>Elite</span>
@@ -481,16 +467,6 @@
           </section>
         </div>
 
-        <section class="panel dashboard-card">
-          <div class="section-head section-head--stack">
-            <div class="section-headline">
-              <div class="section-icon"><svg class="icon-svg icon-svg--fill" viewBox="0 0 24 24"><use href="#icon-trophy"></use></svg></div>
-              <h3>FASST Tier Projection</h3>
-            </div>
-          </div>
-          <div id="tier-track" class="tier-track"></div>
-          <p id="tier-track-copy" class="data-status">Current FASST score: 0/100.</p>
-        </section>
       </div>
 
       <div id="dashboard-progress-panel" class="dashboard-panel" data-dashboard-panel="progress">
@@ -504,8 +480,8 @@
             </div>
             <p class="dashboard-section-copy">Choose how to compare your latest saved score: against your most recent prior submission or against your first recorded baseline.</p>
             <div class="view-toggle" role="tablist" aria-label="Progress comparison mode">
-              <button id="progress-previous-button" type="button" class="switch-button is-active">Vs Previous</button>
-              <button id="progress-baseline-button" type="button" class="switch-button">Vs First</button>
+              <button id="progress-previous-button" type="button" class="switch-button">Vs Previous</button>
+              <button id="progress-baseline-button" type="button" class="switch-button is-active">Vs First</button>
             </div>
             <div id="progress-summary" class="progress-summary"></div>
           </section>
