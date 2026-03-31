@@ -107,12 +107,12 @@
       <div class="hero-copy">
         <div class="topbar-chip">
           <svg class="icon-svg icon-svg--fill icon-svg--trophy" viewBox="0 0 24 24"><use href="#icon-trophy"></use></svg>
-          <span>FASST 150-Point System</span>
+          <span>FASST 100-Point System</span>
         </div>
         <h1>FASST Combine Calculator</h1>
         <p>
-          Grade and gender-based scoring for FASST athletes. Enter testing data, convert trap bar
-          strength to bodyweight ratio, and see the live category breakdown, total score, tier, and projection.
+          Grade and gender-based scoring for FASST athletes. Enter six testing metrics and see the live
+          category breakdown, total score, tier, and projection.
         </p>
       </div>
 
@@ -166,11 +166,6 @@
                 </select>
               </label>
 
-              <label class="field">
-                <span>Bodyweight (lbs)</span>
-                <input name="bodyweight" type="number" min="1" step="0.1" inputmode="decimal" placeholder="e.g. 175" required>
-                <small class="field-note">Required for trap bar ratio</small>
-              </label>
             </div>
           </section>
 
@@ -193,7 +188,7 @@
                     <strong>40-Yard Dash</strong>
                     <span>Lower is better</span>
                   </div>
-                  <small>Max 30 pts</small>
+                  <small>Max 25 pts</small>
                 </div>
                 <div class="metric-input-wrap">
                   <input name="forty" type="number" min="0" step="0.01" inputmode="decimal" placeholder="e.g. 4.65" required>
@@ -207,7 +202,7 @@
                     <strong>Broad Jump</strong>
                     <span>Higher is better</span>
                   </div>
-                  <small>Max 15 pts</small>
+                  <small>Max 10 pts</small>
                 </div>
                 <div class="metric-input-wrap">
                   <input name="broad" type="number" min="0" step="0.1" inputmode="decimal" placeholder="e.g. 96" required>
@@ -221,7 +216,7 @@
                     <strong>CMJ Jump Height</strong>
                     <span>Higher is better</span>
                   </div>
-                  <small>Max 25 pts</small>
+                  <small>Max 15 pts</small>
                 </div>
                 <div class="metric-input-wrap">
                   <input name="cmj" type="number" min="0" step="0.1" inputmode="decimal" placeholder="e.g. 24" required>
@@ -235,7 +230,7 @@
                     <strong>CMJ RSI-Mod</strong>
                     <span>Higher is better</span>
                   </div>
-                  <small>Max 15 pts</small>
+                  <small>Max 10 pts</small>
                 </div>
                 <div class="metric-input-wrap">
                   <input name="rsi" type="number" min="0" step="0.01" inputmode="decimal" placeholder="e.g. 0.28" required>
@@ -270,33 +265,6 @@
                 </div>
               </label>
 
-              <label class="metric-card">
-                <div class="metric-top">
-                  <div>
-                    <strong>Trap Bar 1RM</strong>
-                    <span>Higher is better</span>
-                  </div>
-                  <small>Max 15 pts</small>
-                </div>
-                <div class="metric-input-wrap">
-                  <input name="trapBar1RM" type="number" min="0" step="0.1" inputmode="decimal" placeholder="e.g. 265" required>
-                  <span class="metric-unit">lbs</span>
-                </div>
-              </label>
-
-              <label class="metric-card">
-                <div class="metric-top">
-                  <div>
-                    <strong>Pull-Ups</strong>
-                    <span>Higher is better</span>
-                  </div>
-                  <small>Max 10 pts</small>
-                </div>
-                <div class="metric-input-wrap">
-                  <input name="pull" type="number" min="0" step="1" inputmode="numeric" placeholder="e.g. 12" required>
-                  <span class="metric-unit">reps</span>
-                </div>
-              </label>
             </div>
 
             <div class="submit-row">
@@ -305,7 +273,7 @@
                 <button id="save-draft-button" type="button" class="secondary-button">Save Draft</button>
                 <button id="submit-button" type="submit" class="primary-button" disabled>Submit Results</button>
               </div>
-              <p id="completion-status" class="completion-status">Fill in all 8 events to submit (0/8 complete).</p>
+              <p id="completion-status" class="completion-status">Fill in all 6 events to submit (0/6 complete).</p>
             </div>
           </section>
         </form>
@@ -327,7 +295,7 @@
               <div class="result-meta-top result-meta-top--score">
                 <div>
                   <span>FASST Rating</span>
-                  <strong><span id="total-score">0.0</span> <small>/ 150</small></strong>
+                  <strong><span id="total-score">0.0</span> <small>/ 100</small></strong>
                 </div>
               </div>
               <div class="score-lock-overlay">
@@ -407,11 +375,11 @@
             </div>
           </div>
           <div class="tier-scale">
-            <div class="tier-scale-row tier-scale-row--gold"><strong>Pro Level</strong><span>120-150 pts</span></div>
-            <div class="tier-scale-row tier-scale-row--blue"><strong>Elite</strong><span>95-119 pts</span></div>
-            <div class="tier-scale-row tier-scale-row--green"><strong>Competitive</strong><span>70-94 pts</span></div>
-            <div class="tier-scale-row tier-scale-row--orange"><strong>Developmental</strong><span>40-69 pts</span></div>
-            <div class="tier-scale-row tier-scale-row--gray"><strong>Foundation Phase</strong><span>0-39 pts</span></div>
+            <div class="tier-scale-row tier-scale-row--gold"><strong>Pro Level</strong><span>80-100 pts</span></div>
+            <div class="tier-scale-row tier-scale-row--blue"><strong>Elite</strong><span>63-79 pts</span></div>
+            <div class="tier-scale-row tier-scale-row--green"><strong>Competitive</strong><span>47-62 pts</span></div>
+            <div class="tier-scale-row tier-scale-row--orange"><strong>Developmental</strong><span>27-46 pts</span></div>
+            <div class="tier-scale-row tier-scale-row--gray"><strong>Foundation Phase</strong><span>0-26 pts</span></div>
           </div>
         </section>
       </div>
@@ -737,11 +705,6 @@
           <label class="field">
             <span>Height</span>
             <input name="height" type="text" autocomplete="off" placeholder="e.g. 5'10&quot; or 70 in">
-          </label>
-
-          <label class="field">
-            <span>Weight (lbs)</span>
-            <input name="bodyweight" type="number" min="1" step="0.1" inputmode="decimal" placeholder="e.g. 175">
           </label>
         </div>
 

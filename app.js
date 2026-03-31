@@ -5,32 +5,28 @@
     apiBaseUrl: "",
     winchester: { lat: 39.1857, lon: -78.1633 },
     leadRadiusMiles: 25,
-    metricOrder: ["forty", "broad", "cmj", "rsi", "pro", "cone", "trap", "pull"],
+    metricOrder: ["forty", "broad", "cmj", "rsi", "pro", "cone"],
     metricLabels: {
       forty: "40-Yard Dash",
       broad: "Broad Jump",
       cmj: "CMJ Jump Height",
       rsi: "CMJ RSI-Mod",
       pro: "Pro Agility 5-10-5",
-      cone: "3-Cone L-Drill",
-      trap: "Trap Bar Strength",
-      pull: "Pull-Ups"
+      cone: "3-Cone L-Drill"
     },
     metricMaxPoints: {
-      forty: 30,
-      broad: 15,
-      cmj: 25,
-      rsi: 15,
+      forty: 25,
+      broad: 10,
+      cmj: 15,
+      rsi: 10,
       pro: 20,
-      cone: 20,
-      trap: 15,
-      pull: 10
+      cone: 20
     },
     scoreTiers: [
-      { minScore: 120, tier: "Pro Level", projection: "High-level NCAA Division I trajectory", summary: "This score signals elite all-around combine ability for this peer group." },
-      { minScore: 95, tier: "Elite", projection: "Strong NCAA Division I or Division II projection", summary: "This athlete is testing at a very competitive level and stands out in multiple categories." },
-      { minScore: 70, tier: "Competitive", projection: "Division II, Division III, NAIA, or fast-rising varsity upside", summary: "This athlete has a solid testing base with clear upside and several college-relevant traits." },
-      { minScore: 40, tier: "Developmental", projection: "Developmental varsity or college upside with growth", summary: "This athlete has a workable base with several measurable opportunities to improve." },
+      { minScore: 80, tier: "Pro Level", projection: "High-level NCAA Division I trajectory", summary: "This score signals elite all-around combine ability for this peer group." },
+      { minScore: 63, tier: "Elite", projection: "Strong NCAA Division I or Division II projection", summary: "This athlete is testing at a very competitive level and stands out in multiple categories." },
+      { minScore: 47, tier: "Competitive", projection: "Division II, Division III, NAIA, or fast-rising varsity upside", summary: "This athlete has a solid testing base with clear upside and several college-relevant traits." },
+      { minScore: 27, tier: "Developmental", projection: "Developmental varsity or college upside with growth", summary: "This athlete has a workable base with several measurable opportunities to improve." },
       { minScore: 0, tier: "Foundation Phase", projection: "Needs physical development", summary: "This athlete is still building the performance foundation." }
     ],
     fasstFaviconUrl: "https://images.squarespace-cdn.com/content/v1/691bc0fb5f7ee703b6452720/2fa7f9ca-8d11-4c25-8924-e6e78e4ebbeb/favicon.ico?format=100w",
@@ -530,26 +526,22 @@
       cmj: readNumber(formData.get("cmj")),
       rsi: readNumber(formData.get("rsi")),
       pro: readNumber(formData.get("pro")),
-      cone: readNumber(formData.get("cone")),
-      bodyweight: readNumber(formData.get("bodyweight")),
-      trapBar1RM: readNumber(formData.get("trapBar1RM")),
-      pull: readNumber(formData.get("pull"))
+      cone: readNumber(formData.get("cone"))
     };
   }
 
   function isFormComplete(payload) {
     return Boolean(payload.gender && payload.grade) &&
-      [payload.forty, payload.broad, payload.cmj, payload.rsi, payload.pro, payload.cone, payload.bodyweight, payload.trapBar1RM, payload.pull]
+      [payload.forty, payload.broad, payload.cmj, payload.rsi, payload.pro, payload.cone]
         .every((value) => value !== null);
   }
 
   function calculateScore(payload) {
     const errors = [];
-    const trapRelative = payload.bodyweight > 0 ? payload.trapBar1RM / payload.bodyweight : null;
     const scoreEntries = [];
 
     CONFIG.metricOrder.forEach((metricKey) => {
-      const rawValue = metricKey === "trap" ? trapRelative : payload[metricKey];
+      const rawValue = payload[metricKey];
       const table = state.scoringTables.get(`${payload.gender}|${payload.grade}|${metricKey}`);
       if (!table) {
         errors.push(`Missing scoring table for ${CONFIG.metricLabels[metricKey]} (${payload.gender}, grade ${payload.grade}).`);
@@ -570,7 +562,6 @@
 
     return {
       payload,
-      trapRelative,
       scoreEntries,
       totalScore,
       tier: tierInfo.tier,
@@ -958,14 +949,14 @@
     elements.totalScore.textContent = formatted;
     elements.tierName.textContent = result.tier;
     elements.projectionName.textContent = result.projection;
-    elements.scoreProgressBar.style.width = `${Math.max(0, Math.min(100, (result.totalScore / 150) * 100))}%`;
+    elements.scoreProgressBar.style.width = `${Math.max(0, Math.min(100, (result.totalScore / DASHBOARD_TOTAL_MAX_SCORE) * 100))}%`;
     elements.scoreProgressBar.style.background = tierColor(result.tier);
   }
 
   function updateCompletionStatus(payload) {
-    const completed = [payload.forty, payload.broad, payload.cmj, payload.rsi, payload.pro, payload.cone, payload.trapBar1RM, payload.pull]
+    const completed = [payload.forty, payload.broad, payload.cmj, payload.rsi, payload.pro, payload.cone]
       .filter((value) => value !== null).length;
-    elements.completionStatus.textContent = `Fill in all 8 events to submit (${completed}/8 complete).`;
+    elements.completionStatus.textContent = `Fill in all 6 events to submit (${completed}/6 complete).`;
   }
 
   function buildComparisonCopy(payload) {
@@ -1382,8 +1373,7 @@
       isFasstAthlete: profileInput.isFasstAthlete === "yes",
       gender: profileInput.gender,
       grade: profileInput.grade,
-      height: profileInput.height,
-      bodyweight: profileInput.bodyweight
+      height: profileInput.height
     };
 
     if (profileInput.password) {
@@ -1425,7 +1415,6 @@
       firstName: state.currentUser.firstName || livePayload.firstName || "",
       lastName: state.currentUser.lastName || livePayload.lastName || "",
       height: state.currentUser.height || "",
-      bodyweight: state.currentUser.bodyweight ?? livePayload.bodyweight ?? "",
       gender: state.currentUser.gender || livePayload.gender || "",
       grade: state.currentUser.grade || livePayload.grade || "",
       email: state.currentUser.email || "",
@@ -1450,8 +1439,7 @@
       firstName: state.currentUser.firstName || "",
       lastName: state.currentUser.lastName || "",
       gender: state.currentUser.gender || "",
-      grade: state.currentUser.grade || "",
-      bodyweight: state.currentUser.bodyweight ?? ""
+      grade: state.currentUser.grade || ""
     };
 
     Object.entries(fieldsToHydrate).forEach(([key, value]) => {
@@ -1523,24 +1511,18 @@
       is_fasst_athlete: state.currentUser.isFasstAthlete ? "yes" : "no",
       gender: result.payload.gender,
       grade: result.payload.grade,
-      bodyweight: result.payload.bodyweight,
       forty: result.payload.forty,
       broad: result.payload.broad,
       cmj: result.payload.cmj,
       rsi: result.payload.rsi,
       pro_agility: result.payload.pro,
       cone: result.payload.cone,
-      trap_bar_1rm: result.payload.trapBar1RM,
-      trap_relative: result.trapRelative,
-      pull_ups: result.payload.pull,
       forty_points: pointsByMetric.forty || 0,
       broad_points: pointsByMetric.broad || 0,
       cmj_points: pointsByMetric.cmj || 0,
       rsi_points: pointsByMetric.rsi || 0,
       pro_points: pointsByMetric.pro || 0,
       cone_points: pointsByMetric.cone || 0,
-      trap_points: pointsByMetric.trap || 0,
-      pull_points: pointsByMetric.pull || 0,
       total_score: result.totalScore,
       tier: result.tier,
       projection: result.projection
@@ -1562,7 +1544,6 @@
       firstName: String(formData.get("firstName") || "").trim(),
       lastName: String(formData.get("lastName") || "").trim(),
       height: String(formData.get("height") || "").trim(),
-      bodyweight: readNumber(formData.get("bodyweight")),
       gender: String(formData.get("gender") || "").trim(),
       grade: String(formData.get("grade") || "").trim(),
       email: String(formData.get("email") || "").trim().toLowerCase(),
@@ -1820,52 +1801,6 @@
     return DASHBOARD_SCORE_TIERS.find((tier) => score >= tier.minScore) || DASHBOARD_SCORE_TIERS[DASHBOARD_SCORE_TIERS.length - 1];
   }
 
-  function getDerivedMetricPoints(result) {
-    const payload = {
-      gender: String(result.gender || "").trim(),
-      grade: String(result.grade || "").trim(),
-      forty: getMetricValue(result, "forty"),
-      broad: result.broad,
-      cmj: result.cmj,
-      rsi: result.rsi,
-      pro: result.pro_agility,
-      cone: result.cone,
-      bodyweight: result.bodyweight,
-      trapBar1RM: result.trap_bar_1rm,
-      pull: result.pull_ups
-    };
-
-    const canRecalculate = payload.gender && payload.grade && state.scoringTables.size > 0;
-    if (!canRecalculate) {
-      return {
-        forty: result.forty_points || 0,
-        broad: result.broad_points || 0,
-        cmj: result.cmj_points || 0,
-        rsi: result.rsi_points || 0,
-        pro: result.pro_points || 0,
-        cone: result.cone_points || 0,
-        trap: result.trap_points || 0,
-        pull: result.pull_points || 0
-      };
-    }
-
-    const recalculated = calculateScore(payload);
-    if (recalculated.errors.length > 0) {
-      return {
-        forty: result.forty_points || 0,
-        broad: result.broad_points || 0,
-        cmj: result.cmj_points || 0,
-        rsi: result.rsi_points || 0,
-        pro: result.pro_points || 0,
-        cone: result.cone_points || 0,
-        trap: result.trap_points || 0,
-        pull: result.pull_points || 0
-      };
-    }
-
-    return Object.fromEntries(recalculated.scoreEntries.map((entry) => [entry.metricKey, entry.points]));
-  }
-
   function getMetricValue(result, key) {
     if (key === "forty") {
       return firstDefined(result.forty, result["40_yard_dash"]);
@@ -1875,10 +1810,6 @@
 
   function percentage(value, max) {
     return max > 0 ? Math.max(0, Math.min(100, (Number(value || 0) / max) * 100)) : 0;
-  }
-
-  function average(values) {
-    return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
   }
 
   function valueOrPlaceholder(value) {
@@ -2102,8 +2033,7 @@
       isFasstAthlete: isTruthyFasstAthlete(user.isFasstAthlete ?? user.is_fasst_athlete ?? user.fasst_athlete),
       gender: user.gender || "",
       grade: user.grade || "",
-      height: user.height || "",
-      bodyweight: readNumber(user.bodyweight)
+      height: user.height || ""
     };
   }
 
