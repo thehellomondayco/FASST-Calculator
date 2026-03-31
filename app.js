@@ -647,6 +647,7 @@
     if (!state.currentUser) {
       state.athleteResults = [];
       state.leaderboardRows = [];
+      renderPreview(readFormPayload());
       renderDashboard();
       return;
     }
@@ -662,6 +663,7 @@
       console.error(error);
     }
 
+    hydrateCalculatorFromLatestResult();
     renderDashboard();
   }
 
@@ -1452,6 +1454,41 @@
     renderPreview(readFormPayload());
   }
 
+  function hydrateCalculatorFromLatestResult() {
+    if (!elements.calculatorForm) {
+      return;
+    }
+
+    const latest = getLatestResult();
+    if (!latest) {
+      renderPreview(readFormPayload());
+      return;
+    }
+
+    const fieldsToHydrate = {
+      firstName: latest.first_name || state.currentUser.firstName || "",
+      lastName: latest.last_name || state.currentUser.lastName || "",
+      gender: latest.gender || state.currentUser.gender || "",
+      grade: latest.grade || state.currentUser.grade || "",
+      forty: getMetricValue(latest, "forty"),
+      broad: latest.broad,
+      cmj: latest.cmj,
+      rsi: latest.rsi,
+      pro: latest.pro_agility,
+      cone: latest.cone
+    };
+
+    Object.entries(fieldsToHydrate).forEach(([key, value]) => {
+      const field = elements.calculatorForm.querySelector(`[name="${key}"]`);
+      if (field && value !== null && value !== undefined) {
+        field.value = value;
+      }
+    });
+
+    updateCompletionStatus(readFormPayload());
+    renderSavedResultPreview(latest);
+  }
+
   function readJson(key, fallbackValue, storage) {
     const source = storage || localStorage;
     try {
@@ -1806,6 +1843,37 @@
       return firstDefined(result.forty, result["40_yard_dash"]);
     }
     return result[key];
+  }
+
+  function renderSavedResultPreview(result) {
+    const athleteName = result.athlete_name || [result.first_name || state.currentUser?.firstName || "", result.last_name || state.currentUser?.lastName || ""].filter(Boolean).join(" ") || "Athlete";
+    const scoreEntries = DASHBOARD_METRIC_ORDER.map((metricKey) => ({
+      metricKey,
+      label: DASHBOARD_METRIC_LABELS[metricKey],
+      hasValue: Number.isFinite(getMetricValueForPreview(result, metricKey)),
+      points: Number((result.dashboard_points || getDashboardMetricPoints(result))[metricKey] || 0),
+      maxPoints: DASHBOARD_METRIC_MAX_POINTS[metricKey]
+    }));
+
+    updateSummaryCards({
+      totalScore: Number(result.dashboard_total_score || 0),
+      tier: result.dashboard_tier || "Foundation Phase",
+      projection: result.dashboard_projection || "Needs physical development"
+    });
+    elements.athleteResultName.textContent = athleteName;
+    elements.comparisonCopy.textContent = buildComparisonCopy({
+      gender: result.gender,
+      grade: result.grade
+    });
+    elements.scoreExplainer.textContent = `Showing your latest saved result from ${formatDate(result.date)}. Update any number below to preview a new score.`;
+    renderBreakdown(scoreEntries, false);
+  }
+
+  function getMetricValueForPreview(result, metricKey) {
+    if (metricKey === "pro") {
+      return result.pro_agility;
+    }
+    return getMetricValue(result, metricKey);
   }
 
   function percentage(value, max) {
