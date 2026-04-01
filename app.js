@@ -103,6 +103,7 @@
     breakdownList: document.getElementById("breakdown-list"),
     metricTargetLabels: Array.from(document.querySelectorAll("[data-metric-target]")),
     gateModal: document.getElementById("gate-modal"),
+    gateModalCard: document.querySelector("#gate-modal .modal-card"),
     modalClose: document.getElementById("modal-close"),
     zipForm: document.getElementById("zip-form"),
     existingFasstButton: document.getElementById("existing-fasst-button"),
@@ -121,6 +122,7 @@
     registerTab: document.getElementById("register-tab"),
     scoreLockTriggers: Array.from(document.querySelectorAll(".score-lock-trigger")),
     profileModal: document.getElementById("profile-modal"),
+    profileModalCard: document.querySelector("#profile-modal .modal-card"),
     profileModalClose: document.getElementById("profile-modal-close"),
     profileCancelButton: document.getElementById("profile-cancel-button"),
     profileLogoutButton: document.getElementById("profile-logout-button"),
@@ -1321,6 +1323,7 @@
   function openModal() {
     elements.gateModal.classList.remove("hidden");
     elements.gateModal.setAttribute("aria-hidden", "false");
+    syncModalViewport(elements.gateModalCard);
   }
 
   function closeModal() {
@@ -1332,6 +1335,7 @@
     elements.profileModal.classList.remove("hidden");
     elements.profileModal.setAttribute("aria-hidden", "false");
     updateInlineStatus(elements.profileStatus, "");
+    syncModalViewport(elements.profileModalCard);
   }
 
   function closeProfileModal() {
@@ -1342,6 +1346,26 @@
   function showStep(stepName) {
     document.querySelectorAll(".modal-step").forEach((step) => {
       step.classList.toggle("is-active", step.dataset.step === stepName);
+    });
+    if (!elements.gateModal.classList.contains("hidden")) {
+      syncModalViewport(elements.gateModalCard);
+    }
+  }
+
+  function syncModalViewport(container) {
+    if (!container) {
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      const activeStep = container.querySelector(".modal-step.is-active");
+      container.scrollTop = 0;
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      if (activeStep && typeof activeStep.scrollIntoView === "function") {
+        activeStep.scrollIntoView({ behavior: "smooth", block: "start" });
+      } else if (typeof container.scrollIntoView === "function") {
+        container.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
     });
   }
 
